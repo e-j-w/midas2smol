@@ -1,0 +1,7 @@
+grif-replay
+midas2smol
+run_number
+last.json
+*.o
+*.smol
+*.smol*

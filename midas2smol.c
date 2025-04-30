@@ -64,7 +64,6 @@ static pthread_t midas_thread, grif_thread, ordthrd, ordthr2;
 static int reorder_save, singlethread_save, sortthread_save;
 int sort_next_file(Config *cfg, Sort_status *sort)
 {
-   char tmp[64];
    FILE *smolfp;
    time_t end, start=time(NULL);
    done_events = 0;
@@ -93,23 +92,22 @@ int sort_next_file(Config *cfg, Sort_status *sort)
       init_default_sort(configs[1], sort);     // depend on odb in datafile
       pthread_create(&grif_thread, NULL,(void* (*)(void*))grif_main, sort);
 
-      sprintf(tmp,"%s", cfg->out_file);
-      if( (smolfp=fopen(tmp,"wb")) != NULL ){
-         printf("Opened output file: %s\n",tmp);
+      if( (smolfp=fopen(cfg->out_file,"wb")) != NULL ){
+         printf("Opened output file: %s\n",cfg->out_file);
          uint64_t numSortedEvts = 0U; //placeholder
          fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
          numSortedEvts += sort_main(sort,smolfp); // this exits when sort is done
-         //number of sorted events can only be 48 bits
+         //number of sorted events in SMOL format can only be 48 bits
          if(numSortedEvts > 0xFFFFFFFFFFFF){
             printf("WARNING: number of output events (%lu) truncated to %lu.\n",numSortedEvts,(uint64_t)(numSortedEvts & 0xFFFFFFFFFFFF));
          }
          numSortedEvts &= 0xFFFFFFFFFFFF;
          fseek(smolfp,0,SEEK_SET);
          fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
-         printf("Wrote %lu separated events to output file.\n",numSortedEvts);
          fclose(smolfp);
+         printf("Wrote %lu separated events to output file: %s\n",numSortedEvts,cfg->out_file);
       } else {
-         printf("Can't open SMOL tree: %s to write\n", tmp);
+         printf("Can't open SMOL tree: %s to write\n",cfg->out_file);
          return(0);
       }
 
@@ -124,8 +122,8 @@ int sort_next_file(Config *cfg, Sort_status *sort)
    cfg->midas_runtime    = diagnostics.midas_last_timestamp+1;
    cfg->midas_runtime   -= cfg->midas_start_time;
    memcpy(cfg->midas_title, midas_runtitle, SYS_PATH_LENGTH);
-   printf("File took %ld seconds\n", end-start);
-   return(0);
+   printf("Sorting took %ld seconds\n", end-start);
+   return 0;
 }
 
 extern volatile long grifevent_wrpos;

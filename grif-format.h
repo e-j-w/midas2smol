@@ -1,6 +1,4 @@
 #define MAX_SAMPLE_LEN   4096
-#define ENERGY_BINS      65536 /* 65536 131072 262144 */
-#define NUM_CHAN         4096
 #define MAX_SCALAR_LEN   256
 #define MAX_COINC_EVENTS 4096
 
@@ -27,7 +25,7 @@ typedef struct griffin_fragment_struct { // was 74 bytes, now ?
  //int      dummy1;  int dummy2;        int     dummy3;   int    dummy4;  //##
    int      net_id;  int trigger_num;   long timestamp;  long ts;
    int  wf_present;  int waveform_length;  int file_id;
-   int scl_present;  int scalar_length;  float    esum;   int ab_alt_chan;
+   int scl_present;  int scalar_length;  float    eFloat;   int ab_alt_chan;
 } Grif_event;
 
 // Q* are the original Q-Sum from the digitizer

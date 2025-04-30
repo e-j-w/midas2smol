@@ -45,11 +45,6 @@ double getGrifTime(Grif_event *ptr){
   //return ((double)ptr->ts + randomDbl())*10.0;
 }
 
-double getGrifEnergy(Grif_event *ptr){
-  double correctedE = (ptr->energy*1.0 + randomDbl());
-  return ((double)offsets[ptr->chan]) + correctedE*(((double)gains[ptr->chan]) + correctedE*quads[ptr->chan]);
-}
-
 // odb tables need to be transferred into config, which is saved with histos
 int init_default_sort(Config *cfg, Sort_status *arg)
 {
@@ -119,7 +114,7 @@ int apply_gains(Grif_event *ptr)
 
   // Calculate the energy and calibrated energies
   ptr->energy = energy = ( ptr->integ == 0 ) ? ptr->q : spread(ptr->q)/ptr->integ;
-  ptr->ecal=ptr->esum = offsets[chan]+energy*(gains[chan]+energy*quads[chan]);
+  ptr->ecal=ptr->eFloat = offsets[chan]+energy*(gains[chan]+energy*quads[chan]);
 
   // NOBODY CURRENTLY USES e2,e3,e4 ...
   if( ptr->integ2 != 0 ){
@@ -295,17 +290,17 @@ int pre_sort(int frag_idx, int end_idx)
                       // Hit 1
                       ptr->psd = 10; // Pileup class
                       ptr->energy = energy = (spread(ptr->q)/ptr->integ) + correction12;
-                      ptr->ecal=ptr->esum = offsets[ptr->chan]+energy*(gains[ptr->chan]+energy*quads[ptr->chan]);
+                      ptr->ecal=ptr->eFloat = offsets[ptr->chan]+energy*(gains[ptr->chan]+energy*quads[ptr->chan]);
                       // Hit 2
                       alt->ts_int = dt;
                       alt->psd = 11; // Pileup class
                       alt->energy = energy = (spread(alt->q)/alt->integ) - correction12 + correction23;
-                      alt->ecal=alt->esum = offsets[alt->chan]+energy*(gains[alt->chan]+energy*quads[alt->chan]);
+                      alt->ecal=alt->eFloat = offsets[alt->chan]+energy*(gains[alt->chan]+energy*quads[alt->chan]);
                       // Hit 3
                       alt2->ts_int = dt13;
                       alt2->psd = 12; // Pileup class
                       alt2->energy = energy = (spread(alt2->q)/alt2->integ) - correction23;
-                      alt2->ecal=alt2->esum = offsets[alt2->chan]+energy*(gains[alt2->chan]+energy*quads[alt2->chan]);
+                      alt2->ecal=alt2->eFloat = offsets[alt2->chan]+energy*(gains[alt2->chan]+energy*quads[alt2->chan]);
                     }else{
                       // Triple pileup case B ... in which the 3rd pulse occurs less than L samples after the first
                       //                          again 5 regions, only 2 of which are not piled up (first and last pulse)
@@ -316,17 +311,17 @@ int pre_sort(int frag_idx, int end_idx)
                       // Hit 1
                       ptr->psd = 10; // Pileup class
                       ptr->energy = energy = (spread(ptr->q)/ptr->integ) + correction12;
-                      ptr->ecal=ptr->esum = offsets[ptr->chan]+ptr->energy*(gains[ptr->chan]+ptr->energy*quads[ptr->chan]);
+                      ptr->ecal=ptr->eFloat = offsets[ptr->chan]+ptr->energy*(gains[ptr->chan]+ptr->energy*quads[ptr->chan]);
                       // Hit 2
                       alt->ts_int = dt;
                       alt->psd = 11; // Pileup class
                       alt->energy = energy = (spread(alt->q)/alt->integ) - correction12 + correction23;
-                      alt->ecal=alt->esum = offsets[alt->chan]+energy*(gains[alt->chan]+energy*quads[alt->chan]);
+                      alt->ecal=alt->eFloat = offsets[alt->chan]+energy*(gains[alt->chan]+energy*quads[alt->chan]);
                       // Hit 3
                       alt2->ts_int = dt13;
                       alt2->psd = 12; // Pileup class
                       alt2->energy = energy = (spread(alt2->q)/alt2->integ) - correction23;
-                      alt2->ecal=alt2->esum = offsets[alt2->chan]+energy*(gains[alt2->chan]+energy*quads[alt2->chan]);
+                      alt2->ecal=alt2->eFloat = offsets[alt2->chan]+energy*(gains[alt2->chan]+energy*quads[alt2->chan]);
                     }
                     /*
                     fprintf(stdout,"Complete 3Hit PU event, dt13=%d: %d,%d,%d,%d,%d, %d,%d,%d,%d,%d, %d,%d,%d,%d,%d, %d,%d,%d,%d,%d\n\n",dt13,ptr->q,ptr->q2,alt->q,alt->q2,alt2->q,ptr->integ,ptr->integ2,alt->integ,alt->integ2,alt2->integ,ptr->energy,ptr->energy2,alt->energy,alt->energy2,alt2->energy,ptr->ecal,ptr->e2cal,alt->ecal,alt->e2cal,alt2->ecal);
@@ -346,7 +341,7 @@ int pre_sort(int frag_idx, int end_idx)
             // It was already checked that chan for ptr and alt are the same for pileup events
             pos  = crystal_table[ptr->chan];
             k1 = ptr->integ;
-            ptr->ecal=ptr->esum = ptr->ecal*( pileupk1[chan][0]+(k1*pileupk1[chan][1])+(k1*k1*pileupk1[chan][2])+(k1*k1*k1*pileupk1[chan][3])
+            ptr->ecal=ptr->eFloat = ptr->ecal*( pileupk1[chan][0]+(k1*pileupk1[chan][1])+(k1*k1*pileupk1[chan][2])+(k1*k1*k1*pileupk1[chan][3])
             +(k1*k1*k1*k1*pileupk1[chan][4])+(k1*k1*k1*k1*k1*pileupk1[chan][5])+(k1*k1*k1*k1*k1*k1*pileupk1[chan][6]));
             alt->e4cal=ptr->ecal; // Remember the ecal of the first Hit in this second Hit
 
@@ -355,7 +350,7 @@ int pre_sort(int frag_idx, int end_idx)
             k2 = alt->integ;
             correction = ptr->ecal*( pileupE1[chan][0]+(k2*pileupE1[chan][1])+(k2*k2*pileupE1[chan][2])+(k2*k2*k2*pileupE1[chan][3])
             +(k2*k2*k2*k2*pileupE1[chan][4])+(k2*k2*k2*k2*k2*pileupE1[chan][5])+(k2*k2*k2*k2*k2*k2*pileupE1[chan][6]));
-            alt->ecal=alt->esum = (alt->ecal*( pileupk2[chan][0]+(k2*pileupk2[chan][1])+(k2*k2*pileupk2[chan][2])+(k2*k2*k2*pileupk2[chan][3])
+            alt->ecal=alt->eFloat = (alt->ecal*( pileupk2[chan][0]+(k2*pileupk2[chan][1])+(k2*k2*pileupk2[chan][2])+(k2*k2*k2*pileupk2[chan][3])
             +(k2*k2*k2*k2*pileupk2[chan][4])+(k2*k2*k2*k2*k2*pileupk2[chan][5])+(k2*k2*k2*k2*k2*k2*pileupk2[chan][6])))+correction;
           }
         }
@@ -432,7 +427,8 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
             if(sortedEvt->header.evtTimeNs == 0){
               sortedEvt->header.evtTimeNs = grifT;
             }
-            sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = (float)getGrifEnergy(ptr);
+            //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->eFloat);
+            sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->eFloat;
             sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
             sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core = (uint8_t)(c1);
             if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core >= 64){

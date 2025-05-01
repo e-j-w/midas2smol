@@ -24,6 +24,7 @@ ie. why this is in a separate repo:
 - Input and output files are specified using the command line.
 - Output is a tree file rather than histograms. The intention is to process these trees using other [sort codes](https://github.com/e-j-w/GreasySortCodes).
 - Addback removed (to be handled by downstream sortcodes).
+- grif-angle code removed (to be handled by downstream sortcodes).
 - All detector types other than GRIFFIN and BGO were removed (not supported in tree files for now).
 
 ## Known issues

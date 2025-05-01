@@ -1,23 +1,29 @@
 #ifndef SMOLFMT_H
 #define SMOLFMT_H
 
-//structs defining the SMOL tree format used by Jonathan for sorting data,
-//which can then be processed by external sort codes
+// structs defining the SMOL tree format used by Jonathan for sorting data,
+// which can then be processed by external sort codes
 
-//this format is optimized for the smallest possible filesize, as disk read is the
-//typical bottleneck when sorting
+// This format is optimized for the smallest possible filesize, as disk read is the
+// typical bottleneck when sorting (after ROOT, which is always the biggest bottleneck).
 
-//SMOL tree files consist of evt_header structs written to disk, followed
-//by N hpge_hit structs, where N=evt_header->numHPGeHits.
-//Each even is written sequentially to disk.
-//At the start of the SMOL tree file, there is a single uint64_t header value,
-//formatted as follows:
-// - bits 0 - 48:  totalnumber of events in the file
-// - bits 49 - 63: SMOL tree type (default 0, can be used to specify different tree formats)
-//Ideally, the SMOL tree type information can be used to specify different sorted_evt formats,
-//so that different experiment types can have optimized tree formats only containing the info
-//relevant for that experiment (so that eg. ancillary detector metadata isn't saved for 
-//experiments that only use GRIFFIN)
+// SMOL tree files consist of evt_header structs written to disk, followed
+// by N hpge_hit structs, where N=evt_header->numHPGeHits. Each hpge_hit in an event is
+// written sequentially to disk.
+
+// At the start of the SMOL tree file (before any of the event data), there is a single 
+// uint64_t header value, formatted as follows:
+//   - Bits 0 - 48: total number of events in the file
+//     - Hopefully we never need more than 2.8E14 events per file.
+//   - Bits 49 - 63: SMOL tree type
+//     - Default 0, can be used in the future to specify different tree formats or 
+//       versions.
+//     - This is here to allow the file specfication to be expanded to include different 
+//       sorted_evt formats, so that different experiment types can have optimized tree 
+//       formats only containing the info relevant for that experiment (so that eg. 
+//       ancillary detector metadata isn't saved for experiments that only use GRIFFIN).
+
+//File extension: .smol
 
 #include <stdint.h> //allows uint8_t and similiar types
 

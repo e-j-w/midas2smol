@@ -7,7 +7,6 @@
 #include "config.h"
 #include "grif-format.h"
 #include "smol-format.h"
-#include "grif-angles.h"
 #include "default_sort.h"
 
 int          odb_daqsize;// number of daq channels currently defined in the odb
@@ -359,10 +358,14 @@ int pre_sort(int frag_idx, int end_idx)
       } // end of if(alt->subsys == SUBSYS_HPGE_A && alt->chan == ptr->chan)
 
       // BGO suppression of HPGe
-      if( (dt >= bgo_window_min && dt <= bgo_window_max) && alt->subsys == SUBSYS_BGO && !ptr->suppress ){
-        // could alternatively use crystal numbers rather than clover#
-        //    (don't currently have this for BGO)
-        if( crystal_table[ptr->chan]/16 == crystal_table[alt->chan]/16 ){ ptr->suppress = 1; }
+      // JW modification: use CFD corrected time as in GRSISort
+      if( alt->subsys == SUBSYS_BGO && !ptr->suppress ){
+        dt = (int)(getGrifTime(ptr) - alt->ts); if( dt < 0 ){ dt = -1*dt; }
+        if(dt >= bgo_window_min && dt <= bgo_window_max){
+          // could alternatively use crystal numbers rather than clover#
+          //    (don't currently have this for BGO)
+          if( crystal_table[ptr->chan]/16 == crystal_table[alt->chan]/16 ){ ptr->suppress = 1; }
+        }
       }
       break;
       default: break; // Unrecognized or unprocessed subsys type
@@ -417,9 +420,9 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
       case SUBSYS_HPGE_A: // Ge
         // Only use GRGa
         if(ptr->suppress == 0){
-          //passes Compton suppression
+          //^passes Compton suppression
           if(ptr->psd == 1){
-            //no pileup (will want to include pileup correction later)
+            //^no pileup (will want to include pileup correction later)
             int c1 = crystal_table[ptr->chan];
             if( c1 >= 0 && c1 < 64){
               if(sortedEvt->header.numHPGeHits >= MAX_EVT_HIT){
@@ -443,7 +446,7 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
               uint8_t dupFound = 0;
               for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
                 if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core == sortedEvt->hpgeHit[i].core){
-                  if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 20.0){
+                  if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 200.0){
                     dupFound = 1; //duplicate hit found
                   }
                 }

@@ -2,7 +2,6 @@ OBJECTS = config.o midas2smol.o midas-format.o grif-format.o \
           reorder.o default_sort.o test_config.o
 
 CFLAGS  = -g -O2
-CC = gcc
 
 midas2smol: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) -rdynamic -lz -ldl -lm -lpthread

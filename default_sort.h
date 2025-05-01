@@ -46,15 +46,6 @@ static char subsys_name[MAX_SUBSYS][STRING_LEN] = {
 }; // final entry will be used if not found - make sure it is not empty
 // #####################################################################
 
-#define N_CLOVER 16
-#define N_HPGE 64
-#define N_ARIES 76
-#define N_LABR 8
-#define N_TACS 12
-#define N_RCMP_POS 6
-#define N_RCMP_STRIPS 32
-#define N_DES_WALL 60
-
 //#######################################################################
 //########                PRESORT Time Gates                   ##########
 //#######################################################################
@@ -62,5 +53,8 @@ static char subsys_name[MAX_SUBSYS][STRING_LEN] = {
 // The definition of the time difference gate in 10 nanosecond units.
 // The value is the maximum time difference in 10 nanosecond units.
 // The default values set here are replaced by the Global value at start of sorting.
+
+//BGO window
+//300 ns (ie. 30 samples) is the GRSISort default (see https://github.com/GRIFFINCollaboration/GRSISort/blob/baf84f5947ec6a80035b01d38696b6e5d1ae2dcc/include/TAnalysisOptions.h#L70)
 static int bgo_window_min = 0;
-static int bgo_window_max = 20;
+static int bgo_window_max = 30;

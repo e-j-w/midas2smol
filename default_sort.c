@@ -39,9 +39,11 @@ double randomDbl(){
 }
 
 //get the CFD corrected time
+//implemented in GRSISort at https://github.com/GRIFFINCollaboration/GRSIData/blob/4b5dbe964d18190c03e151bca818d980c03a9bfc/libraries/TGRSIFormat/TGRSIMnemonic.cxx#L218
 double getGrifTime(Grif_event *ptr){
-  long cfdCorrTs = (ptr->ts & 0xFFFFFFFFFFFC0000); //timestamp, excluding lower 18 bits
-  return ((double)cfdCorrTs + ((double)ptr->cfd/16.0) + randomDbl())*10.0;
+  double timeNs = (ptr->ts & (~0x3ffff))*10.0; //timestamp value, excluding lower 18 bits
+  //printf("cfd: %u, ts: %u, corr-ts: %u, diff: %i\n",ptr->cfd,ptr->ts & 0x3ffff,(ptr->cfd >> 4), (int)(ptr->ts & 0x3ffff) - (int)(ptr->cfd >> 4));
+  return (timeNs + (((double)ptr->cfd + randomDbl())/1.6));
   //return ((double)ptr->ts + randomDbl())*10.0;
 }
 
@@ -146,7 +148,7 @@ int apply_gains(Grif_event *ptr)
   return(0);
 }
 
-// Presort - do Suppression and Addback here
+// Presort - do Suppression here
 //  - frag_idx is about to leave coinc window (which ends at end_idx)
 //    check other frags in window for possible suppression and/or summing
 //  also calculate multiplicities[store in frag_idx only]
@@ -416,37 +418,40 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
         // Only use GRGa
         if(ptr->suppress == 0){
           //passes Compton suppression
-          int c1 = crystal_table[ptr->chan];
-          if( c1 >= 0 && c1 < 64){
-            if(sortedEvt->header.numHPGeHits >= MAX_EVT_HIT){
-              fprintf(stderr,"WARNING: too many hits in win_idx %i, frag_idx %i\n",win_idx,frag_idx);
-              break;
-            }
-            double grifT = getGrifTime(ptr);
-            //fprintf(stdout,"ts: %li, time: %f ns\n",ptr->ts,grifT);
-            if(sortedEvt->header.evtTimeNs == 0){
-              sortedEvt->header.evtTimeNs = grifT;
-            }
-            //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->eFloat);
-            sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->eFloat;
-            sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
-            sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core = (uint8_t)(c1);
-            if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core >= 64){
-              fprintf(stderr,"WARNING: invalid GRIFFIN core: %u",sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core);
-              break;
-            }
-            //filter out duplicate data
-            uint8_t dupFound = 0;
-            for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
-              if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core == sortedEvt->hpgeHit[i].core){
-                if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 20.0){
-                  dupFound = 1; //duplicate hit found
+          if(ptr->psd == 1){
+            //no pileup (will want to include pileup correction later)
+            int c1 = crystal_table[ptr->chan];
+            if( c1 >= 0 && c1 < 64){
+              if(sortedEvt->header.numHPGeHits >= MAX_EVT_HIT){
+                fprintf(stderr,"WARNING: too many hits in win_idx %i, frag_idx %i\n",win_idx,frag_idx);
+                break;
+              }
+              double grifT = getGrifTime(ptr);
+              //fprintf(stdout,"ts: %li, time: %f ns\n",ptr->ts,grifT);
+              if(sortedEvt->header.evtTimeNs == 0){
+                sortedEvt->header.evtTimeNs = grifT;
+              }
+              //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->eFloat);
+              sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->eFloat;
+              sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
+              sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core = (uint8_t)(c1);
+              if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core >= 64){
+                fprintf(stderr,"WARNING: invalid GRIFFIN core: %u",sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core);
+                break;
+              }
+              //filter out duplicate data
+              uint8_t dupFound = 0;
+              for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
+                if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core == sortedEvt->hpgeHit[i].core){
+                  if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 20.0){
+                    dupFound = 1; //duplicate hit found
+                  }
                 }
               }
-            }
-            if(dupFound == 0){
-              //hit is not a duplicate, so store it
-              sortedEvt->header.numHPGeHits++;
+              if(dupFound == 0){
+                //hit is not a duplicate, so store it
+                sortedEvt->header.numHPGeHits++;
+              }
             }
           }
         }

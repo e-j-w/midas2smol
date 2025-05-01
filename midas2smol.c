@@ -252,10 +252,10 @@ uint64_t insert_presort_win(Grif_event *ptr, int slot, FILE *out)
    prv_evt[ptr->address] = count;
    if( ptr->chan != -1 ){
       printf("%s E=%6d[cal:%8.1f] id:0x%08x\n",
-             chan_name[ptr->chan],ptr->energy,ptr->esum, ptr->master_id);
+             chan_name[ptr->chan],ptr->energy,ptr->eFloat, ptr->master_id);
    } else {
       printf("---------- E=%6d[cal:%8.1f] id:0x%08x\n",
-             ptr->energy, ptr->esum, ptr->master_id );
+             ptr->energy, ptr->eFloat, ptr->master_id );
    }
    */
 

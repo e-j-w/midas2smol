@@ -21,6 +21,7 @@ char midas_runtitle[SYS_PATH_LENGTH];
 Sort_metrics diagnostics;
 static Sort_status sort_status;
 FILE *output_tree;
+uint64_t psd_vals[MAX_PSD_VALS];
 int main(int argc, char *argv[])
 {
    if(argc != 3){
@@ -94,16 +95,22 @@ int sort_next_file(Config *cfg, Sort_status *sort)
 
       if( (smolfp=fopen(cfg->out_file,"wb")) != NULL ){
          printf("Opened output file: %s\n",cfg->out_file);
+         memset(psd_vals,0,sizeof(psd_vals));
          uint64_t numSortedEvts = 0U; //placeholder
          fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
+         fwrite(&psd_vals,sizeof(psd_vals),1,smolfp);
          numSortedEvts += sort_main(sort,smolfp); // this exits when sort is done
          //number of sorted events in SMOL format can only be 48 bits
          if(numSortedEvts > 0xFFFFFFFFFFFF){
             printf("WARNING: number of output events (%lu) truncated to %lu.\n",numSortedEvts,(uint64_t)(numSortedEvts & 0xFFFFFFFFFFFF));
          }
          numSortedEvts &= 0xFFFFFFFFFFFF;
+         uint64_t smolFormatVersion = 1;
+         numSortedEvts |= (smolFormatVersion << 48);
+         //rebuild header
          fseek(smolfp,0,SEEK_SET);
          fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
+         fwrite(&psd_vals,sizeof(psd_vals),1,smolfp);
          fclose(smolfp);
          printf("Wrote %lu separated events to output file: %s\n",numSortedEvts,cfg->out_file);
       } else {

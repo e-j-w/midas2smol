@@ -1,6 +1,7 @@
 #define MAX_SAMPLE_LEN   4096
 #define MAX_SCALAR_LEN   256
 #define MAX_COINC_EVENTS 4096
+#define MAX_PSD_VALS     16
 
 #include <stdint.h> //allows uint8_t and similiar types
 

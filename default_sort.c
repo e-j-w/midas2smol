@@ -27,6 +27,7 @@ float  pileupE1[MAX_DAQSIZE][7];
 static short *chan_address = addr_table;
 static int subsys_initialized[MAX_SUBSYS];
 extern Grif_event grif_event[MAX_COINC_EVENTS];
+extern uint64_t psd_vals[MAX_PSD_VALS];
 
 // Default sort function declarations
 extern uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx);
@@ -40,6 +41,10 @@ double randomDbl(){
 //get the CFD corrected time
 //implemented in GRSISort at https://github.com/GRIFFINCollaboration/GRSIData/blob/4b5dbe964d18190c03e151bca818d980c03a9bfc/libraries/TGRSIFormat/TGRSIMnemonic.cxx#L218
 double getGrifTime(Grif_event *ptr){
+  /*int cfdTSDiff = abs((int)(ptr->ts & 0x3ffff) - (int)(ptr->cfd >> 4));
+  if(cfdTSDiff >= 30){
+    return -1.0; //discard hit, failed CFD
+  }*/
   double timeNs = (ptr->ts & (~0x3ffff))*10.0; //timestamp value, excluding lower 18 bits
   //printf("cfd: %u, ts: %u, corr-ts: %u, diff: %i\n",ptr->cfd,ptr->ts & 0x3ffff,(ptr->cfd >> 4), (int)(ptr->ts & 0x3ffff) - (int)(ptr->cfd >> 4));
   return (timeNs + (((double)ptr->cfd + randomDbl())/1.6));
@@ -421,6 +426,9 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
         // Only use GRGa
         if(ptr->suppress == 0){
           //^passes Compton suppression
+          if((ptr->psd >= 0)&&(ptr->psd < 16)){
+            psd_vals[ptr->psd]++;
+          }
           if(ptr->psd == 1){
             //^no pileup (will want to include pileup correction later)
             int c1 = crystal_table[ptr->chan];

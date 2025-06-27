@@ -29,13 +29,14 @@ long tsevents_out;
 extern Sort_metrics diagnostics;
 void reorder_status(int current_time)
 {
-   int sum, *err = diagnostics.reorder_error;
-   sum = err[0] + err[2] + err[3] + err[4] + err[5] + err[6] + err[7];// err[8] is in addition to other
+   unsigned long sum; 
+   int *err = diagnostics.reorder_error;
+   sum = err[0] + err[2] + err[3] + err[ERR_LATE_IN] + err[5] + err[ERR_LATE_OUT] + err[7];// err[8] is in addition to other
                                                                       // errors - do not add to total
-   printf("Reorder: in:%10ld out:%10ld err:%10d[%5.1f%%] [Desync:%d]\n         ",
-          tsevents_in, tsevents_out, sum, (100.0*sum)/tsevents_in, err[8] );
+   printf("Reorder: in:%10ld out:%10ld err:%10ld[%5.1f%%] [Desync:%d]\n         ",
+          tsevents_in, tsevents_out, sum, (unsigned long)((100.0*sum)/tsevents_in), err[8] );
    printf("[init:%d format:%d length:%d early:%d late:%d,%d, unk:%d]\n",
-          err[2], err[0], err[3], err[5], err[4], err[6], err[7] );
+          err[2], err[0], err[3], err[5], err[ERR_LATE_IN], err[ERR_LATE_OUT], err[7] );
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -43,13 +44,14 @@ void reorder_status(int current_time)
 //  it is planned to optimize the insertion sort with one skip-list if needed
 //////////////////////////////////////////////////////////////////////////////
 #define TOO_EARLY_CUTOFF 3000000000
-#define REORDER_EVENTS    65536  // *0.5 => max 32k events stored in buffers
-#define REORDER_TSLOTS  1000000  // 1 million [~1.25 seconds]
+#define REORDER_EVENTS    262144  // *0.5 => max 128k events stored in buffers
+#define REORDER_TSLOTS  10000000  // 10 million [~12.5 seconds]
 #define BUCKET_SIZE_BITS      7  // 128 timestamps per slot -> 1us
 #define OVERFULL_FRACTION   0.5
 #define OUTPUT_FRACTION    0.25
 #define INIT_WAIT           250 // allow # junk events per grifc at run start
 #define REORDER_MAXEVENTSIZE 20 // max 20 words - 80 bytes
+#define MAX_DATA_GAP 40000000000 // 400 seconds
 typedef struct reorderbuf_struct Tsbuf;
 struct reorderbuf_struct {
    volatile Tsbuf *next; unsigned long ts;
@@ -198,11 +200,10 @@ void reorder_main(Sort_status *arg)
    return;
 }
 
-#define MAX_DATA_GAP 4000000000 // 40 seconds
 void reorder_out(Sort_status *arg)
 {
    int i, j, wr_avail, wrpos, ts_slot, *err;
-   int bucket_length = (1<<BUCKET_SIZE_BITS);
+   unsigned long bucket_length = (unsigned long)(1<<BUCKET_SIZE_BITS);
    volatile Tsbuf *buf, *nxt;
    unsigned long ts, prev_ts;
    unsigned int usecs=100;
@@ -227,7 +228,7 @@ void reorder_out(Sort_status *arg)
                reorder_status(0);
                return;
             } else { //  error?
-               printf("REORDER ERROR-VERY-LONG-DATA-GAP\n");
+               printf("REORDER ERROR-VERY-LONG-DATA-GAP: %li\n",ts-prev_ts);
             }
          }
          ts_slot = (ts >> BUCKET_SIZE_BITS) % REORDER_TSLOTS;

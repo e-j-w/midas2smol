@@ -16,7 +16,7 @@
 
 int sort_next_file(Config *cfg, Sort_status *sort);
 
-int coinc_events_cutoff = 64;
+int coinc_events_cutoff = 256; //64 isn't enough for some high rate data, end up with high WinFull %s...
 char midas_runtitle[SYS_PATH_LENGTH];
 Sort_metrics diagnostics;
 static Sort_status sort_status;
@@ -60,9 +60,10 @@ static int done_events;
 extern void grif_main(Sort_status *arg);
 extern void reorder_main(Sort_status *arg);
 extern void reorder_out(Sort_status *arg);
-extern uint64_t sort_main(Sort_status *arg, FILE *out);
+extern void sort_main(Sort_status *arg, FILE *out);
 static pthread_t midas_thread, grif_thread, ordthrd, ordthr2;
 static int reorder_save, singlethread_save, sortthread_save;
+uint64_t numSortedEvts;
 int sort_next_file(Config *cfg, Sort_status *sort)
 {
    FILE *smolfp;
@@ -77,6 +78,7 @@ int sort_next_file(Config *cfg, Sort_status *sort)
    reorder_save = sort->reorder;
    singlethread_save = sort->single_thread;
    sortthread_save = sort->sort_thread;
+   numSortedEvts = 0UL;
    if( singlethread_save == 1 ){
       midas_main(sort);
    } else {
@@ -96,13 +98,13 @@ int sort_next_file(Config *cfg, Sort_status *sort)
       if( (smolfp=fopen(cfg->out_file,"wb")) != NULL ){
          printf("Opened output file: %s\n",cfg->out_file);
          memset(psd_vals,0,sizeof(psd_vals));
-         uint64_t numSortedEvts = 0U; //placeholder
-         fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
+         uint64_t tmp = 0U; //placeholder
+         fwrite(&tmp,sizeof(uint64_t),1,smolfp);
          fwrite(&psd_vals,sizeof(psd_vals),1,smolfp);
-         numSortedEvts += sort_main(sort,smolfp); // this exits when sort is done
+         sort_main(sort,smolfp); // this exits when sort is done
          //number of sorted events in SMOL format can only be 48 bits
          if(numSortedEvts > 0xFFFFFFFFFFFF){
-            printf("WARNING: number of output events (%lu) truncated to %lu.\n",numSortedEvts,(uint64_t)(numSortedEvts & 0xFFFFFFFFFFFF));
+            printf("WARNING: number of output events (%10ld) truncated to %10ld.\n",numSortedEvts,(uint64_t)(numSortedEvts & 0xFFFFFFFFFFFF));
          }
          numSortedEvts &= 0xFFFFFFFFFFFF;
          uint64_t smolFormatVersion = 1;
@@ -112,7 +114,7 @@ int sort_next_file(Config *cfg, Sort_status *sort)
          fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
          fwrite(&psd_vals,sizeof(psd_vals),1,smolfp);
          fclose(smolfp);
-         printf("Wrote %lu separated events to output file: %s\n",numSortedEvts,cfg->out_file);
+         printf("Wrote %10ld separated events to output file: %s\n",numSortedEvts,cfg->out_file);
       } else {
          printf("Can't open SMOL tree: %s to write\n",cfg->out_file);
          return(0);
@@ -165,12 +167,11 @@ void show_sort_state()
 }
 Sort_status *get_sort_status(){ return( &sort_status ); }
 
-uint64_t sort_main(Sort_status *arg, FILE *out)
+void sort_main(Sort_status *arg, FILE *out)
 {
    int i, len, nxtpos, rd_avail;
    static long grifevent_nxtpos;
    unsigned int usecs=10000;
-   uint64_t numSortedEvts = 0U;
 
    printf("starting sort_main ...\n");
    grifevent_rdpos = grifevent_nxtpos = nxtpos = 0;
@@ -184,32 +185,31 @@ uint64_t sort_main(Sort_status *arg, FILE *out)
       nxtpos = ++grifevent_nxtpos % MAX_COINC_EVENTS;
    }
    printf("sort_main finished\n");
-   return numSortedEvts;
 }
 
-static int proc_calls, sorted, skipped, prefull, sortfull, completed_events;
+static long calls, sorted, skipped, prefull, sortfull, completed_events;
 // called when each new event read into ptr -> list[slot]
 uint64_t process_event(Grif_event *ptr, int slot, FILE *out)
 {
    time_t cur_time = time(NULL);
-   static int calls, prv_call;
+   static long prv_call;
    static time_t prv_time;
-   int dt = cur_time - prv_time, de = calls - prv_call;
    if( prv_time == 0 ){ prv_time = cur_time; }
-   prv_call = ++calls;
+   calls++;
 
    if( cur_time-prv_time >= 10 ){
+      int dt = cur_time - prv_time, de = calls - prv_call;
+      prv_call = calls;
       printf("----------------------------------------------------------------\n");
       midas_status(cur_time); reorder_status(cur_time);  grif_status(cur_time);
-      printf("ProcEvt: %10d[Good:%3d%% Skip:%3d%% WinFull:%3d%%] %6.3f Mevt/s\n",
+      printf("ProcEvt: %10ld[Good:%3d%% Skip:%3d%% WinFull:%3d%%] %6.3f Mevt/s\n",
              calls, (int)(100.0*(calls-skipped-prefull)/calls),
              (int)(100.0*skipped/calls), (int)(100.0*prefull/calls), (de/(1000000.0*dt))
       );
+      printf("SortedEvt: %10ld, CompletedEvt: %10ld\n",numSortedEvts,sorted);
       prv_time = cur_time;
    }
-   if( singlethread_save == 1 && sort_status.odb_done == 0 ){ calls = 0;
-      init_default_sort(configs[1], &sort_status); sort_status.odb_done = 1;
-   }
+
    apply_gains(ptr);
    return insert_presort_win(ptr, slot, out);
 }

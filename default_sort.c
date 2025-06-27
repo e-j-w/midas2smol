@@ -45,8 +45,12 @@ double getGrifTime(Grif_event *ptr){
   if(cfdTSDiff >= 30){
     return -1.0; //discard hit, failed CFD
   }*/
-  double timeNs = (ptr->ts & (~0x3ffff))*10.0; //timestamp value, excluding lower 18 bits
-  //printf("cfd: %u, ts: %u, corr-ts: %u, diff: %i\n",ptr->cfd,ptr->ts & 0x3ffff,(ptr->cfd >> 4), (int)(ptr->ts & 0x3ffff) - (int)(ptr->cfd >> 4));
+  double timeNs = ((unsigned long)(ptr->ts & ~0x000000000003ffffUL))*10.0; //timestamp value, excluding lower 18 bits
+  //printf("timeNs: %f\n",timeNs);
+  if(timeNs > 1.0E19){
+    printf("getGrifTime - ts: %lu, time in ns: %f",ptr->ts, timeNs);
+    getc(stdin);
+  }
   return (timeNs + (((double)ptr->cfd + randomDbl())/1.6));
   //return ((double)ptr->ts + randomDbl())*10.0;
 }
@@ -424,12 +428,12 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
     switch(ptr->subsys){
       case SUBSYS_HPGE_A: // Ge
         // Only use GRGa
-        if(ptr->suppress == 0){
+        //if(ptr->suppress != 1){
           //^passes Compton suppression
           if((ptr->psd >= 0)&&(ptr->psd < 16)){
             psd_vals[ptr->psd]++;
           }
-          if(ptr->psd == 1){
+          //if(ptr->psd == 1){
             //^no pileup (will want to include pileup correction later)
             int c1 = crystal_table[ptr->chan];
             if( c1 >= 0 && c1 < 64){
@@ -437,35 +441,47 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                 fprintf(stderr,"WARNING: too many hits in win_idx %i, frag_idx %i\n",win_idx,frag_idx);
                 break;
               }
-              double grifT = getGrifTime(ptr);
-              //fprintf(stdout,"ts: %li, time: %f ns\n",ptr->ts,grifT);
-              if(sortedEvt->header.evtTimeNs == 0){
-                sortedEvt->header.evtTimeNs = grifT;
-              }
-              //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->eFloat);
-              sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->eFloat;
-              sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
-              sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core = (uint8_t)(c1);
-              if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core >= 64){
-                fprintf(stderr,"WARNING: invalid GRIFFIN core: %u",sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core);
-                break;
-              }
-              //filter out duplicate data
-              uint8_t dupFound = 0;
-              for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
-                if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core == sortedEvt->hpgeHit[i].core){
-                  if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 200.0){
-                    dupFound = 1; //duplicate hit found
+              if((ptr->eFloat > 0.0f)&&(ptr->eFloat < 16384.0f)){ //try to filter out weird high energy stuff
+                double grifT = getGrifTime(ptr);
+                if(grifT > 1.0E19){
+                  printf("fill_smol_entry - ts: %lu, cfd: %i, time in ns: %f",ptr->ts,ptr->cfd,grifT);
+                  getc(stdin);
+                }
+                if(sortedEvt->header.evtTimeNs == 0){
+                  sortedEvt->header.evtTimeNs = grifT;
+                }
+                //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->eFloat);
+                sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->eFloat;
+                sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
+                sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core = (uint8_t)(c1);
+                if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core >= 64){
+                  fprintf(stderr,"WARNING: invalid GRIFFIN core: %u",sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core);
+                  break;
+                }
+                //filter out duplicate data
+                uint8_t dupFound = 0;
+                for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
+                  if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core == sortedEvt->hpgeHit[i].core){
+                    if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 200.0){
+                      dupFound = 1; //duplicate hit found
+                    }
                   }
+                  /*if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 1.0){
+                    printf("  hit: %u, core: %u, time: %f ns, offset: %f ns\n",i,sortedEvt->hpgeHit[i].core,sortedEvt->header.evtTimeNs + sortedEvt->hpgeHit[i].timeOffsetNs,sortedEvt->hpgeHit[i].timeOffsetNs);
+                    printf("  hit: %u, core: %u, time: %f ns, offset: %f ns\n",sortedEvt->header.numHPGeHits,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core,sortedEvt->header.evtTimeNs + sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs);
+                  }*/
+                }
+                if(dupFound == 0){
+                  //hit is not a duplicate, so store it
+                  //printf("passed hit: %u, core: %u, energy: %0.3f, suppress: %i, ts: %li, cfd: %i, time: %0.2f ns\n",sortedEvt->header.numHPGeHits,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy,ptr->suppress,ptr->ts,ptr->cfd,grifT);
+                  sortedEvt->header.numHPGeHits++;
                 }
               }
-              if(dupFound == 0){
-                //hit is not a duplicate, so store it
-                sortedEvt->header.numHPGeHits++;
-              }
+            }else{
+              fprintf(stderr,"WARNING: unknown GRIFFIN crystal %i\n",c1);
             }
-          }
-        }
+          //}
+        //}
         break; // outer-switch-case-GE
       case SUBSYS_BGO:
         //at least one suppressor fired

@@ -24,7 +24,7 @@ typedef struct griffin_fragment_struct { // was 74 bytes, now ?
    int     crystal;  int fold;          int     subsys;   int    dummy4;  //40
    int      angle1;  int angle2;        int     angle3;   int    angle4;  //44
  //int      dummy1;  int dummy2;        int     dummy3;   int    dummy4;  //##
-   int      net_id;  int trigger_num;   long timestamp;  long ts;
+   int      net_id;  int trigger_num;   unsigned long timestamp;  unsigned long ts;
    int  wf_present;  int waveform_length;  int file_id;
    int scl_present;  int scalar_length;  float    eFloat;   int ab_alt_chan;
 } Grif_event;

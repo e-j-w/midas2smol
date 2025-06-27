@@ -58,7 +58,7 @@ void grif_status(int current_time)
 
    printf("GrifEvt: in:%10ld err:%10d[%5.1f%%]         %6.3f Mevt/s\n         ",
           grif_evcount, sum, (100.0*sum)/grif_evcount, de/(1000000.0*dt) );
-   printf("[Hdr:%d Trlr:%d addr:%d phwrds:%d trigMatch%d]\n",
+   printf("[Hdr:%d Trlr:%d addr:%d phwrds:%d trigMatch:%d]\n",
           grif_err[GRIF_ERR_HDR], grif_err[GRIF_ERR_TRLR], grif_err[GRIF_ERR_ADDR],
                            grif_err[GRIF_ERR_PHWORDS], grif_err[GRIF_ERR_TRIGMATCH] );
 }
@@ -149,8 +149,8 @@ extern int reorder_events_read;
 // header different - no multi qt's, integral bits changed
 int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int process_waveforms)
 {
-   int i, type, value, qtcount, master_port, grifc_port, done=0;
-   unsigned int val32, *evstrt = evntbuf;
+   int i, type, qtcount, master_port, grifc_port, done=0;
+   unsigned int value, val32, *evstrt = evntbuf;
    static int savelen, prevtrig, errcount;
    int *wave_ptr = NULL;
 
@@ -195,7 +195,7 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
             if( ptr->dtype != 0xF && (ptr->chan < 0) ){
                ++grif_err[GRIF_ERR_ADDR];
                //if( ++errcount < 100 || (errcount % 1000 == 0) ){
-               fprintf(stderr,"Ignoring Event - Unknown address [0x%04x] returns chan %d\n", ptr->address, ptr->chan);
+               //fprintf(stderr,"Ignoring Event - Unknown address [0x%04x] returns chan %d\n", ptr->address, ptr->chan);
                //}
                return(-1);
             }
@@ -215,16 +215,16 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
             ptr->trig_req =  value & 0x0fffffff;
             break;
          case 0xa:                                           /*  Time Stamp Lo */
-            ptr->timestamp   = (long)( value & 0x0fffffff );
+            ptr->timestamp   = (unsigned long)( value & 0x0fffffff );
             break;
          case 0xb:                               /* Time Stamp Hi and deadtime */
-            ptr->timestamp   |= (long)((value & 0x0003fff) << 28);
+            ptr->timestamp   |= (unsigned long)((value & 0x0003fff) << 28);
             ptr->deadtime     = ( (value & 0xfffc000) >> 14);
             ptr->ts = ptr->timestamp;
             break;
          case 0xc:                                             /* waveform data */
             if( wave_ptr == NULL ){
-               fprintf(stderr,"griffin_decode: no memory for waveform\n");
+               //fprintf(stderr,"griffin_decode: no memory for waveform\n");
             } else if( process_waveforms == 1 ){/* + 14->16bit sign extension */
                waveform[(*wave_ptr)  ]   = value & 0x3fff;
                waveform[(*wave_ptr)++] |= ((value>>13) & 1) ? 0xC000 : 0;
@@ -327,7 +327,7 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
 
                break;
             }
-         case 0xf: fprintf(stderr,"griffin_decode: 0xF.......\n");
+         case 0xf: //fprintf(stderr,"griffin_decode: 0xF.......\n");
                   /* Unassigned packet identifier */ return(-1);
          default:  fprintf(stderr,"griffin_decode: default case\n"); return(-1);
       }

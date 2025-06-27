@@ -367,9 +367,8 @@ int pre_sort(int frag_idx, int end_idx)
       } // end of if(alt->subsys == SUBSYS_HPGE_A && alt->chan == ptr->chan)
 
       // BGO suppression of HPGe
-      // JW modification: use CFD corrected time as in GRSISort
       if( alt->subsys == SUBSYS_BGO && !ptr->suppress ){
-        dt = (int)(getGrifTime(ptr) - alt->ts); if( dt < 0 ){ dt = -1*dt; }
+        dt = (int)(ptr->ts - alt->ts); if( dt < 0 ){ dt = -1*dt; }
         if(dt >= bgo_window_min && dt <= bgo_window_max){
           // could alternatively use crystal numbers rather than clover#
           //    (don't currently have this for BGO)
@@ -428,7 +427,7 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
     switch(ptr->subsys){
       case SUBSYS_HPGE_A: // Ge
         // Only use GRGa
-        //if(ptr->suppress != 1){
+        if(ptr->suppress != 1){
           //^passes Compton suppression
           if((ptr->psd >= 0)&&(ptr->psd < 16)){
             psd_vals[ptr->psd]++;
@@ -447,9 +446,12 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                   printf("fill_smol_entry - ts: %lu, cfd: %i, time in ns: %f",ptr->ts,ptr->cfd,grifT);
                   getc(stdin);
                 }
+                /*if(grifT > 5.0E10){
+                  printf("longer time present (%f)\n",grifT);
+                }
                 if(sortedEvt->header.evtTimeNs == 0){
                   sortedEvt->header.evtTimeNs = grifT;
-                }
+                }*/
                 //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->eFloat);
                 sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->eFloat;
                 sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
@@ -481,7 +483,7 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
               fprintf(stderr,"WARNING: unknown GRIFFIN crystal %i\n",c1);
             }
           //}
-        //}
+        }
         break; // outer-switch-case-GE
       case SUBSYS_BGO:
         //at least one suppressor fired

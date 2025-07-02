@@ -448,10 +448,10 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                 }
                 /*if(grifT > 5.0E10){
                   printf("longer time present (%f)\n",grifT);
-                }
+                }*/
                 if(sortedEvt->header.evtTimeNs == 0){
                   sortedEvt->header.evtTimeNs = grifT;
-                }*/
+                }
                 //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->eFloat);
                 sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->eFloat;
                 sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);

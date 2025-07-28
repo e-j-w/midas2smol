@@ -274,14 +274,14 @@ int pre_sort_exit(int frag_idx, int end_idx)
         //    (don't currently have this for BGO)
         if( crystal_table[ptr->chan]/16 == crystal_table[alt->chan]/16 ){ ptr->suppress = 1; }
       }
-      // Germanium addback -
+      /*// Germanium addback -
       //    earliest fragment has the sum energy, others are marked -1
       // Remember the other crystal channel number in alt_chan for use in Compton Polarimetry
       if( (dt >= addback_window_min && dt <= addback_window_max) && alt->subsys == SUBSYS_HPGE_A ){
         if( alt->esum >= 0 && crystal_table[alt->chan]/16 == crystal_table[ptr->chan]/16 ){
           ptr->esum += alt->esum; alt->esum = -1; ptr->alt_chan = alt->chan;
         }
-      }
+      }*/
       break;
       case SUBSYS_HPGE_B:
       // HPGe B pile-up corrections

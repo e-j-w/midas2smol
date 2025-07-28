@@ -59,9 +59,9 @@ static char subsys_name[MAX_SUBSYS][STRING_LEN] = {
 static int bgo_window_min = 0;
 static int bgo_window_max = 30;
 
-//addback window
+/*//addback window
 static int addback_window_min = 0;
-static int addback_window_max = 20;
+static int addback_window_max = 20;*/
 
 
 // HPGe pileup

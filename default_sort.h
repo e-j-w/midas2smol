@@ -58,3 +58,27 @@ static char subsys_name[MAX_SUBSYS][STRING_LEN] = {
 //300 ns (ie. 30 samples) is the GRSISort default (see https://github.com/GRIFFINCollaboration/GRSISort/blob/baf84f5947ec6a80035b01d38696b6e5d1ae2dcc/include/TAnalysisOptions.h#L70)
 static int bgo_window_min = 0;
 static int bgo_window_max = 30;
+
+//addback window
+static int addback_window_min = 0;
+static int addback_window_max = 20;
+
+
+// HPGe pileup
+#define N_PU_CLASSES 15
+// Pileup Class definitions
+#define PU_ERROR             0
+#define PU_SINGLE_HIT        1
+#define PU_SINGLE_HIT_ERROR  2
+#define PU_2HIT_A1ST         3
+#define PU_2HIT_A2ND         4
+#define PU_2HIT_B1ST         5
+#define PU_2HIT_B2ND         6
+#define PU_2HIT_C1ST         7
+#define PU_2HIT_C2ND         8
+#define PU_2HIT_ERROR        9
+#define PU_3HIT_1ST         10
+#define PU_3HIT_2ND         11
+#define PU_3HIT_3RD         12
+#define PU_3HIT_ERROR       13
+#define PU_OTHER            14

@@ -15,9 +15,12 @@ int open_next_sortfiles(Sort_status *arg);
 int free_sortfile(Sort_status *sort);
 int close_sortfiles(Sort_status *arg);
 int end_current_sortfile(int fd);
-int pre_sort(int frag_idx, int end_idx);
 uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx);
 uint64_t sort_built_event(int window_start, int win_end, FILE *out);
+
+// Sorting window sizes. Can be set as Globals
+extern int presort_window_width;
+extern int sort_window_width;
 
 #define DEFAULT_CONFIG "last.json"
 

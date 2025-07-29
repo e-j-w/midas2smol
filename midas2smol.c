@@ -25,14 +25,20 @@ FILE *output_tree;
 uint64_t psd_vals[MAX_PSD_VALS];
 int main(int argc, char *argv[])
 {
-   if(argc != 3){
-      fprintf(stdout,"  midas2smol midas_file output_SMOL_tree\n");
-      fprintf(stdout,"    MIDAS files are expected to be named using the\n");
-      fprintf(stdout,"    standard run and subrun numbering scheme (eg.\n");
-      fprintf(stdout,"    run29623_000.mid). Provide the path of the first \n");
-      fprintf(stdout,"    subrun, and all available subruns for that run\n");
-      fprintf(stdout,"    number will then be sorted.\n\n");
+   if(argc < 3){
+      fprintf(stdout,"  midas2smol midas_file output_SMOL_tree config_json\n\n");
+      fprintf(stdout,"    MIDAS files are expected to be named using the standard run\n");
+      fprintf(stdout,"    and subrun numbering scheme (eg. run29623_000.mid).\n");
+      fprintf(stdout,"    Provide the path of the first subrun, and all available\n");
+      fprintf(stdout,"    subruns for that run number will then be sorted.\n\n");
+      fprintf(stdout,"    If no config file name is given, the default name\n");
+      fprintf(stdout,"    (last.json) will be assumed.\n\n");
       exit(0);
+   }
+   if(argc >= 4){
+      strncpy(configfileName,argv[3],255);
+   }else{
+      strncpy(configfileName,DEFAULT_CONFIG,255);
    }
    srand(28719747); //seed random number generator (use fixed seed so that results are consistent between sorts)
    Sort_status *sort = &sort_status;

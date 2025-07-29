@@ -23,6 +23,7 @@ extern int presort_window_width;
 extern int sort_window_width;
 
 #define DEFAULT_CONFIG "last.json"
+static char configfileName[256]; //holds the name of the actual config file used
 
 typedef struct global_struct {
    char name[STRING_LEN]; int min; int max;

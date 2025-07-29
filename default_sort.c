@@ -126,12 +126,8 @@ int GetIDfromAddress(unsigned short addr){ // address must be an unsigned short
 int pre_sort_enter(int start_idx, int frag_idx)
 {
   Grif_event *alt, *ptr = &grif_event[frag_idx];
-  int caen_ts_offset = -60; // this value (-60) aligns the timestamps of HPGe with ZDS(CAEN)
-  float energy, ecal, psd, correction;
-  int i, ppg_index;
-  int dt, bin, chan2, chan = ptr->chan;
-  int clover, ge1, c1,c2, add;
-  int ct_index[4][4] = {{-1,0,1,2},{0,-1,1,2},{0,1,-1,2},{0,1,2,-1}};
+  float energy, ecal;
+  int chan = ptr->chan;
 
   // Protect against invalid channel numbers
   if( chan < 0 || chan >= odb_daqsize ){
@@ -181,14 +177,10 @@ int pre_sort_enter(int start_idx, int frag_idx)
 //  also calculate multiplicities[store in frag_idx only]
 int pre_sort_exit(int frag_idx, int end_idx)
 {
-  Grif_event *alt2, *alt, *ptr = &grif_event[frag_idx];
-  float desw_median_distance = 1681.8328; // descant wall median source-to-detector distance in mm
-  int i, j, dt, dt13, tof;
-  float q1,integ2,q12,k1,k2,k12,e1,e2,e12,m,c;
+  Grif_event *alt, *ptr = &grif_event[frag_idx];
+  int i, dt;
   int chan,chan2,found,pos;
-  int clover, ge1, c1,c2,bin;
   float energy,ecal,correction;
-  int ct_index[4][4] = {{-1,0,1,2},{0,-1,1,2},{0,1,-1,2},{0,1,2,-1}};
 
   // Assign chan local variable and check it is a valid channel number
   if( (chan=ptr->chan)<0 || ptr->chan >= odb_daqsize ){

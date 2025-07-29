@@ -639,7 +639,7 @@ int init_config()
       configs[0]->type = configs[1]->type = MEM_CONFIG;
    }
    init_default_config(cfg);  // populate default "test" config during testing
-   load_config(cfg, DEFAULT_CONFIG, NULL); // attempt to load, ignore any error
+   load_config(cfg, configfileName, NULL); // attempt to load, ignore any error
    //clear_calibrations(cfg); // Clear the calibrations to default values following server restart
    fprintf(stdout,"Initial setup complete :-)\n\n");
    return(0);
@@ -840,7 +840,7 @@ int save_config(Config *cfg, char *filename, int overwrite)
 //   memcpy(cfg->varlist[i].name, name, strlen(name)+1);
 //   memcpy(cfg->varlist[i].title, title, strlen(title)+1);
 //   ++cfg->nsortvar;
-//   cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
+//   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
 //  return(0);
 //}
 
@@ -1065,7 +1065,7 @@ int edit_calibration(Config *cfg, char *name, float offset, float gain, float qu
       cal->address = address;  cal->datatype = type;
     }
     //printf("saving config edit_calibration\n");
-   cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
+   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
    return(0);
 }
 
@@ -1088,7 +1088,7 @@ int set_directory(Config *cfg, char *name, char *path)
       return(-1);
    }
    //printf("saving config set_directory\n");
-   cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
+   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
    return(0);
 }
 
@@ -1125,7 +1125,7 @@ int set_midas_param(Config *cfg, char *name, char *value)
       return(-1);
    }
    //printf("saving config set_midas_param\n");
-   cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
+   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
    return(0);
 }
 

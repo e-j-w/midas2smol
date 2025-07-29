@@ -72,7 +72,6 @@ int init_default_config(Config *cfg) // setup initial live config (configs[0])
          fprintf(stderr,"init_globals: can't read value in %s\n", tmp);
          cfg->lock = 0; return(-1);
       }
-      if(add_global(cfg,initgloballist[3*i],value,j)){cfg->lock=0;return(-1);}
    }
    cfg->lock = 0; return(0);
 }

@@ -162,41 +162,16 @@ int pre_sort_enter(int start_idx, int frag_idx)
       if(ptr->pileup==1 && ptr->nhit ==1){
         ptr->pu_class = PU_SINGLE_HIT; // Single hit events, no pileup, this is the most common type of HPGe event
       }
-   }
-
-  // HPGe A
-  if( ptr->subsys == SUBSYS_HPGE_A){
-    ptr->pu_class = PU_OTHER; // Pileup class - default value for all HPGe events
-    if(ptr->pileup==1 && ptr->nhit ==1){
-      ptr->pu_class = PU_SINGLE_HIT; // Single hit events, no pileup, this is the most common type of HPGe event
     }
 
-    // HPGe Clover time-dependant crosstalk corrections within same clover
-    i = start_idx;
-    while( i != frag_idx ){ // need at least two events in window
-      if( ++i >=  PTR_BUFSIZE ){ i=0; } alt = &grif_event[i]; // WRAP
-      if( (chan2 = alt->chan)<0 || alt->chan >= odb_daqsize ){
-        fprintf(stderr,"presort error: ignored event in chan:%d\n",alt->chan );
-        continue;
+    // HPGe A
+    if( ptr->subsys == SUBSYS_HPGE_A){
+      ptr->pu_class = PU_OTHER; // Pileup class - default value for all HPGe events
+      if(ptr->pileup==1 && ptr->nhit ==1){
+        ptr->pu_class = PU_SINGLE_HIT; // Single hit events, no pileup, this is the most common type of HPGe event
       }
-      if((dt=ptr->ts - alt->ts)>479 || alt->subsys != SUBSYS_HPGE_A){ continue; }
 
-      if(chan2 != chan ){
-        if((clover=(int)(crystal_table[chan2]/4)) == (int)(crystal_table[chan]/4)){
-          // HPGe Clover time-dependant crosstalk corrections within same clover
-          // dt is always positive here
-          // The original hit (ptr) came after the crosstalk-inducing hit (alt)
-          // Make correction to ptr hit based on energy of alt.
-            bin = (int)((1940+dt)/160);
-            if(bin<0 || bin>15){ fprintf(stderr,"pre_sort_enter bin [%d] out of bounds for dt %d\n",bin,dt); continue; }
-            ge1 = crystal_table[chan];
-            c1 = ge1%4;
-            c2 = ct_index[c1][(int)(crystal_table[chan2]%4)];
-        }
-      }
-    } // end of while
-
-  } // end of if( ptr->subsys == SUBSYS_HPGE_A){
+    } // end of if( ptr->subsys == SUBSYS_HPGE_A){
     return(0);
   }
 
@@ -240,25 +215,6 @@ int pre_sort_exit(int frag_idx, int end_idx)
     // SubSystem-specific pre-processing
     switch(ptr->subsys){
       case SUBSYS_HPGE_A:
-
-      // HPGe Clover time-dependant crosstalk corrections
-      if(alt->subsys == SUBSYS_HPGE_A && chan2 != chan){
-        if((clover=(int)(crystal_table[chan2]/4)) == (int)(crystal_table[chan]/4)){
-          dt = ptr->ts - alt->ts; // Use relative time difference. This is always negative
-
-          if(dt>-1940 && dt <= 0){
-            // The original hit (ptr) came earlier then the crosstalk-inducing hit (alt)
-            // Make correction to ptr hit based on energy of alt.
-            //  dt -= 1920; // Correct the timestamp difference so that the right correction is calculated
-            bin = (int)((1940+dt)/160);
-            if(bin<0 || bin>15){ fprintf(stderr,"pre_sort_exit bin [%d] out of bounds for dt %d\n",bin,dt); continue; }
-            ge1 = crystal_table[chan];
-            c1 = ge1%4;
-            c2 = ct_index[c1][(int)(crystal_table[chan2]%4)];
-          }
-          if( dt < 0 ){ dt = -1*dt; } // Reset the abs time difference for anything that follows
-        }
-      }
 
       // HPGe pile-up corrections
       // THE PRE_SORT WINDOW SHOULD BE EXTENDED TO COVER THE FULL POSSIBLE TIME DIFFERENCE BETWEEN PILE-UP events
@@ -412,6 +368,8 @@ if(dt>500){ return(0); } // Restrict pileup handling to 5 microseconds. 8 micros
   }
   alt->alt_ecal=ptr->ecal; // Remember the ecal of the first Hit in this second Hit. Must be done regardless if a correction is made
 
+  //printf("%f %f %f\n",pileupE1[chan][0],pileupE1[chan][1],pileupE1[chan][2]); //print some pileup correction coefficents
+
   return(0);
 }
 
@@ -465,7 +423,7 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
           if((ptr->pu_class >= 0)&&(ptr->pu_class < 16)){
             psd_vals[ptr->pu_class]++;
           }
-          if(ptr->pu_class == PU_SINGLE_HIT){
+          //if(ptr->pu_class == PU_SINGLE_HIT){
             //^no pileup (will want to include pileup correction later)
             int c1 = crystal_table[ptr->chan];
             if( c1 >= 0 && c1 < 64){
@@ -515,7 +473,7 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
             }else{
               fprintf(stderr,"WARNING: unknown GRIFFIN crystal %i\n",c1);
             }
-          }
+          //}
         }
         break; // outer-switch-case-GE
       case SUBSYS_BGO:

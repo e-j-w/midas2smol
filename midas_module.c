@@ -214,11 +214,6 @@ void midas_module_main(Sort_status *arg)
    db_get_value(hDB, 0, key, &run_title, &size, TID_STRING, FALSE); run_title[255]=0;
    size = strlen(run_title); 
    memcpy( midas_runtitle, run_title, size ); midas_runtitle[size] = 0;
-   
-   size = 256; sprintf(key,"/Logger/Data dir");
-   db_get_value(hDB, 0, key, &data_dir, &size, TID_STRING, FALSE);
-   set_directory(configs[0], "Histo", data_dir);
-   set_directory(configs[1], "Histo", data_dir);
   
    bm_open_buffer("SYSTEM", (32*1024*1024), &hBuf);
    bm_set_cache_size(hBuf, 100000, 0); // 100kbytes

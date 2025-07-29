@@ -108,7 +108,7 @@ int write_config(Config *cfg, FILE *fp)
 {
    Cal_coeff *calib;  Global *global;
    Sortvar *var;      Cond *cond;        Gate *gate;
-   int i, j;
+   int i, j, first;
    char tmp[64];
 
    fprintf(fp,"{\n   \"Analyzer\" : [\n");
@@ -120,6 +120,10 @@ int write_config(Config *cfg, FILE *fp)
       fprintf(fp,"%s", ( i<cfg->nsortvar-1 ) ? ",\n" : "\n" );
    }
    fprintf(fp,"      ]},\n");
+   fprintf(fp,"      {\"Gates\" : [\n");
+   fprintf(fp,"      ]},\n"); first = 1;
+   fprintf(fp,"      {\"Histograms\" : [\n");
+   fprintf(fp,"\n      ]},\n");
    fprintf(fp,"      {\"Globals\" : [\n");
    for(i=0; i<cfg->nglobal; i++){ global = cfg->globals[i];
       fprintf(fp,"%9s{\"name\" : \"%s\" , \"min\" : %d , \"max\" : %d ",
@@ -129,22 +133,30 @@ int write_config(Config *cfg, FILE *fp)
    fprintf(fp,"      ]},\n");
    fprintf(fp,"      {\"Calibrations\" : [\n");
    for(i=0; i<cfg->ncal; i++){ calib = cfg->calib[i];
-      fprintf(fp,"%9s{\"name\" : \"%s\" , \"address\" : %d , \"datatype\" : %d , \"offset\" : %f , \"gain\" : %f , \"quad\" : %e ", "", calib->name, calib->address, calib->datatype, calib->offset, calib->gain, calib->quad );
-      if(calib->pileupk1[0] != -1 && !isnan(calib->pileupk1[0])){
-        fprintf(fp,", \"pileupk1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk1[0],calib->pileupk1[1],calib->pileupk1[2],calib->pileupk1[3],calib->pileupk1[4],calib->pileupk1[5],calib->pileupk1[6]);
-        fprintf(fp,", \"pileupk2\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk2[0],calib->pileupk2[1],calib->pileupk2[2],calib->pileupk2[3],calib->pileupk2[4],calib->pileupk2[5],calib->pileupk2[6]);
-        fprintf(fp,", \"pileupE1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupE1[0],calib->pileupE1[1],calib->pileupE1[2],calib->pileupE1[3],calib->pileupE1[4],calib->pileupE1[5],calib->pileupE1[6]);
-      }else{
-        fprintf(fp,", \"pileupk1\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
-        fprintf(fp,", \"pileupk2\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
-        fprintf(fp,", \"pileupE1\" : [ %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0);
-      }
+     fprintf(fp,"%9s{\"name\" : \"%s\" , \"address\" : %d , \"datatype\" : %d , \"offset\" : %f , \"gain\" : %f , \"quad\" : %e ", "", calib->name, calib->address, calib->datatype, calib->offset, calib->gain, calib->quad );
+     if(strncmp(calib->name,"GRG",3)==0){
+       if(calib->pileupk1[0] != -1){
+         fprintf(fp,", \"pileupk1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk1[0],calib->pileupk1[1],calib->pileupk1[2],calib->pileupk1[3],calib->pileupk1[4],calib->pileupk1[5],calib->pileupk1[6]);
+         fprintf(fp,", \"pileupk2\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk2[0],calib->pileupk2[1],calib->pileupk2[2],calib->pileupk2[3],calib->pileupk2[4],calib->pileupk2[5],calib->pileupk2[6]);
+         fprintf(fp,", \"pileupE1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupE1[0],calib->pileupE1[1],calib->pileupE1[2],calib->pileupE1[3],calib->pileupE1[4],calib->pileupE1[5],calib->pileupE1[6]);
+       }else{
+         fprintf(fp,", \"pileupk1\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
+         fprintf(fp,", \"pileupk2\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
+         fprintf(fp,", \"pileupE1\" : [ %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0);
+       }
+      //skip crosstalk, unimplemented
+      fprintf(fp,", \"crosstalk0\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+      fprintf(fp,", \"crosstalk1\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+      fprintf(fp,", \"crosstalk2\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+     }
       fprintf(fp, "%s", ( i<cfg->ncal-1 ) ? "},\n" : "}\n" );
    }
    fprintf(fp,"      ]},\n");
    fprintf(fp,"      {\"Directories\" : [\n");
    {
       fprintf(fp,"%9s{\"name\" : \"Data\", ", "");
+      fprintf(fp,"\"Path\" : \"%s\"},\n", cfg->data_dir);
+      fprintf(fp,"%9s{\"name\" : \"Histo\", ", "");
       fprintf(fp,"\"Path\" : \"%s\"},\n", cfg->data_dir);
       fprintf(fp,"%9s{\"name\" : \"Config\", ", "");
       fprintf(fp,"\"Path\" : \"%s\"}\n", cfg->config_dir); // NO COMMA
@@ -171,6 +183,11 @@ int load_config(Config *cfg, char *filename, char *buffer)
    char *ptr, *name, *valstr, *title, *path, *var, *var2, op[8], tmp[80];
    float gain, offset, quad;
    float puk1[7], puk2[7], puE1[7];
+   float ct0[16], ct1[16], ct2[16];
+   // Initialize values to defaults
+   // Values of -1 are ignored by edit_calibration - use this for all channels that are not HPGe to avoid bloating the size of the config
+   float puk_reset[7]={1,0,0,0,0,0,0}, puE1_reset[7]={0,0,0,0,0,0,0}, pu_ignore[7]={-1,-1,-1,-1,-1,-1,-1};
+   float ct_reset[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, ct_ignore[16]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
    Config *tmp_cfg;
    Cond *cond;
    FILE *fp;
@@ -198,7 +215,7 @@ int load_config(Config *cfg, char *filename, char *buffer)
    } else {
       fprintf(stderr,"load_config: no file or buffer specified\n");
    }
-   clear_config(cfg);
+   clear_config(cfg); // setup hardcoded variables
    ptr=config_data;
    if( strncmp(ptr,"{\"Analyzer\":[", 13) != 0 ){
       fprintf(stderr,"load_config: err1 byte %ld\n", ptr-config_data);
@@ -226,6 +243,170 @@ int load_config(Config *cfg, char *filename, char *buffer)
       ++ptr; // skip '}'
       if( *ptr++ == ',' ){ continue; }
       ptr+=2; break; // skip '},'
+   }
+   if( strncmp(ptr,"{\"Gates\":[", 10) != 0 ){
+      fprintf(stderr,"load_config: err5 byte %ld\n", ptr-config_data);
+      return(-1);
+   } ptr += 10;
+   while( 1 ){ // Gates
+      if( strncmp(ptr,"]},", 3) == 0 ){ ptr+=3; break; }// empty section
+      if( strncmp(ptr,"{\"name\":\"", 9) != 0 ){
+         fprintf(stderr,"load_config: err6 byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 9;
+      name = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      cfg->lock=0;
+      if( strncmp(ptr,",\"gateCondition\":[", 18) != 0 ){
+         fprintf(stderr,"load_config: err7 byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 18;
+      while( 1 ){ // Gate-Conditions
+         if( strncmp(ptr,"{\"indexID\":", 11) != 0 ){
+            fprintf(stderr,"load_config: err8 byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 11; while( *ptr != ',' ){ ++ptr; /* skip index id */ }
+         if( strncmp(ptr,",\"Variable\":\"", 13) != 0 ){
+            fprintf(stderr,"load_config: err8b byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 13; var = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+         if( strncmp(ptr,",\"Logic\":\"", 10) != 0 ){
+            fprintf(stderr,"load_config: err8c byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 10;
+         if(       strncmp(ptr,"GE",2) == 0 ){ sprintf(op,">=");
+         } else if(strncmp(ptr,"GT",2) == 0 ){ sprintf(op,">");
+         } else if(strncmp(ptr,"LE",2) == 0 ){ sprintf(op,"<=");
+         } else if(strncmp(ptr,"LT",2) == 0 ){ sprintf(op,"<");
+         } else if(strncmp(ptr,"EQ",2) == 0 ){ sprintf(op,"=");
+         } else if(strncmp(ptr,"RA",2) == 0 ){ sprintf(op,"RA");
+         } else {
+            fprintf(stderr,"load_config:err9 byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 3;
+         if( strncmp(ptr,",\"Value\":", 9) != 0 ){
+            fprintf(stderr,"load_config: err9b byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 9; valstr=ptr; while( isdigit(*ptr) ){ ++ptr; } *ptr++ = 0;
+         if( sscanf( valstr, "%d", &value) < 1 ){
+            fprintf(stderr,"load_config:errA byte %ld\n", ptr-config_data);
+            return(-1);
+         }
+         cfg->lock=0;
+         if( *ptr++ == ',' ){ continue; }
+         ++ptr; break; // skip ']'
+      }
+      if( *ptr++ == ',' ){ continue; }
+      ptr += 2; break; // skip '},'
+   }
+   if( strncmp(ptr,"{\"Histograms\":[", 15) != 0 ){
+      fprintf(stderr,"load_config: errB byte %ld\n", ptr-config_data);
+      return(-1);
+   } ptr += 15;
+   while( 1 ){ // Histograms
+      if( strncmp(ptr,"]},", 3) == 0 ){ ptr+=3; break; }// empty section
+      if( strncmp(ptr,"{\"name\":\"",9) != 0 ){
+         fprintf(stderr,"load_config: errC byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 9;
+      name = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      //if( strncmp(ptr,"{\"title\":\"",10) != 0 ){
+      //   fprintf(stderr,"load_config: errC byte %ld\n", ptr-config_data);
+      //   return(-1);
+      //} ptr += 10;
+      //title = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      title = name;
+      if( strncmp(ptr,",\"path\":\"", 9) != 0 ){
+         fprintf(stderr,"load_config: errD byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 9;
+      path = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      if( strncmp(ptr,",\"Xvariable\":\"", 14) != 0 ){
+         fprintf(stderr,"load_config: errE byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 14;
+      var = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      if( strncmp(ptr,",\"Xmin\":", 8) != 0 ){
+         fprintf(stderr,"load_config: errFa byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 8;
+      valstr = ptr; while( isdigit(*ptr) ){ ++ptr; } tmp[0]=*ptr; *ptr++=0;
+      if( sscanf( valstr, "%d", &val2) < 1 ){
+         fprintf(stderr,"load_config:errFb byte %ld\n", ptr-config_data);
+            return(-1);
+      }
+      if( strncmp(ptr,"\"Xmax\":", 7) != 0 ){
+         fprintf(stderr,"load_config: errFc byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 7;
+      valstr = ptr; while( isdigit(*ptr) ){ ++ptr; } tmp[0]=*ptr; *ptr++=0;
+      if( sscanf( valstr, "%d", &val3) < 1 ){
+         fprintf(stderr,"load_config:errFd byte %ld\n", ptr-config_data);
+            return(-1);
+      }
+      if( strncmp(ptr,"\"Xbins\":", 8) != 0 ){
+         fprintf(stderr,"load_config: errFe byte %ld\n", ptr-config_data);
+         return(-1);
+      } ptr += 8;
+      valstr = ptr; while( isdigit(*ptr) ){ ++ptr; } tmp[0]=*ptr; *ptr++=0;
+      if( sscanf( valstr, "%d", &value) < 1 ){
+         fprintf(stderr,"load_config:errFf byte %ld\n", ptr-config_data);
+            return(-1);
+      }
+      if( strncmp(ptr,"\"Yvariable\":\"", 13) != 0 ){
+         cfg->lock=0;
+      } else {
+         ptr += 13;
+         var2 = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+         if( strncmp(ptr,",\"Ymin\":", 8) != 0 ){
+            fprintf(stderr,"load_config: errG byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 8;
+         valstr = ptr; while( isdigit(*ptr) ){++ptr;} tmp[0]=*ptr;*ptr++=0;
+         if( sscanf( valstr, "%d", &val5) < 1 ){
+            fprintf(stderr,"load_config:errH byte %ld\n", ptr-config_data);
+               return(-1);
+         }
+         if( strncmp(ptr,"\"Ymax\":", 7) != 0 ){
+            fprintf(stderr,"load_config: errHa byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 7;
+         valstr = ptr; while( isdigit(*ptr) ){++ptr;} tmp[0]=*ptr;*ptr++=0;
+         if( sscanf( valstr, "%d", &val6) < 1 ){
+            fprintf(stderr,"load_config:errHb byte %ld\n", ptr-config_data);
+               return(-1);
+         }
+         if( strncmp(ptr,"\"Ybins\":", 8) != 0 ){
+            fprintf(stderr,"load_config: errHc byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 8;
+         valstr = ptr; while( isdigit(*ptr) ){++ptr;} tmp[0]=*ptr;*ptr++=0;
+         if( sscanf( valstr, "%d", &val4) < 1 ){
+            fprintf(stderr,"load_config:errI byte %ld\n", ptr-config_data);
+               return(-1);
+         }
+         cfg->lock=0;
+      }
+      if( strncmp(ptr,"\"histogramCondition\":[", 22) != 0 ){
+         fprintf(stderr,"load_config: errJ byte %ld\n", ptr-config_data);
+            return(-1);
+      } ptr += 22;
+      while(1){  // Histo gates
+         if( strncmp(ptr,"]}", 2) == 0 ){ ptr+=2; break; } // empty list
+         if( strncmp(ptr,"{\"indexID\":", 11) != 0 ){
+            fprintf(stderr,"load_config: errK byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 11; while( isdigit(*ptr) || *ptr=='-' ){++ptr;}
+         if( strncmp(ptr,",\"Gate\":\"", 9) != 0 ){
+            fprintf(stderr,"load_config: errKa byte %ld\n", ptr-config_data);
+            return(-1);
+         } ptr += 9;
+         valstr = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+         ++ptr; // skip '}' - end of single condition
+         cfg->lock=0;
+         if( *ptr == ',' ){ ++ptr; continue; } else { ptr +=2; break;}// ']}'
+      }
+      if( strncmp(ptr,",{\"", 3) == 0 ){ ++ptr; continue; }
+      ptr += 3; break; // skip closing ]},
    }
    if( strncmp(ptr,"{\"Globals\":[", 12) != 0 ){
       fprintf(stderr,"load_config: errL byte %ld\n", ptr-config_data);
@@ -257,7 +438,7 @@ int load_config(Config *cfg, char *filename, char *buffer)
          fprintf(stderr,"load_config:errQ byte %ld\n", ptr-config_data);
          return(-1);
       }
-      cfg->lock=1; add_global(cfg, name, value, val2); cfg->lock=0;
+      cfg->lock=0;
       if( *ptr++ == ',' ){ continue; } // have skipped ']' if not
       ptr+=2; break; // skip '},'
    }
@@ -266,10 +447,7 @@ int load_config(Config *cfg, char *filename, char *buffer)
       return(-1);
    } ptr += 17;
    while( 1 ){ // Calibrations
-      if( strncmp(ptr,"]},", 3) == 0 ){ 
-         ptr+=3; 
-         //fprintf(stdout,"Calibrations section empty so breaking here.\n"); 
-         break; }// empty section
+      if( strncmp(ptr,"]},", 3) == 0 ){ ptr+=3; fprintf(stdout,"Calibrations section empty so breaking here.\n"); break; }// empty section
       if( strncmp(ptr,"{\"name\":\"", 9) != 0 ){
          fprintf(stderr,"load_config: errS byte %ld\n", ptr-config_data);
          return(-1);
@@ -322,7 +500,7 @@ int load_config(Config *cfg, char *filename, char *buffer)
         return(-1);
       }
       // The pileup correction parameters were introduced in Feb 2025.
-      // Config files before this date will not have pileup correcitons, and after this they are optional
+      // Config files before this date will not have pileup corrections, and after this they are optional
       if( strncmp(ptr,"\"pileupk1\":",11) == 0 ){
         ptr += 11; valstr = ptr;
         if( sscanf(valstr, "[%f,%f,%e,%e,%e,%e,%e], ", &puk1[0],&puk1[1],&puk1[2],&puk1[3],&puk1[4],&puk1[5],&puk1[6]) != 7 ){
@@ -338,7 +516,6 @@ int load_config(Config *cfg, char *filename, char *buffer)
           fprintf(stderr,"load_config:errPUC byte %ld\n", ptr-config_data);
           return(-1);
         }
-        //while(isdigit(*ptr)||*ptr=='.'||*ptr=='-'||*ptr=='+'||*ptr=='e'||*ptr==','||*ptr=='['||*ptr==']'){++ptr;}
         while(*ptr!='\"'){++ptr;}
         if( strncmp(ptr,"\"pileupE1\":",11) != 0 ){
           fprintf(stderr,"load_config:errPUD byte %ld\n", ptr-config_data);
@@ -348,15 +525,45 @@ int load_config(Config *cfg, char *filename, char *buffer)
           fprintf(stderr,"load_config:errPUE byte %ld\n", ptr-config_data);
           return(-1);
         }
-        //while(isdigit(*ptr)||*ptr=='.'||*ptr=='-'||*ptr=='+'||*ptr=='e'||*ptr==','||*ptr=='['||*ptr==']'){++ptr;}
-        while(*ptr!='}'){++ptr;}
-        ++ptr;
+        while(*ptr!=']'){++ptr;}
+        ptr+=2;
+      }else if(strncmp(name,"GRG",3)==0){ // Only process pileup and crosstalk for HPGe
+           memcpy(puk1,puk_reset, 7 * sizeof(float));
+           memcpy(puk2,puk_reset, 7 * sizeof(float));
+           memcpy(puE1,puE1_reset, 7 * sizeof(float));
       }else{
-           // Initialize pileup parameters to default values
-           for(i=0; i<7; i++){
-             puk1[i] = puk2[i] = puE1[i] = 0;
-           }
-           puk1[0] = puk2[0] = 1; // set default factor as 1 not zero
+            memcpy(puk1,pu_ignore, 7 * sizeof(float));
+            memcpy(puk2,pu_ignore, 7 * sizeof(float));
+            memcpy(puE1,pu_ignore, 7 * sizeof(float));
+      }
+      // The crosstalk correction parameters were introduced in June 2025.
+      // Config files before this date will not have crosstalk corrections, and after this they are optional
+      if( strncmp(ptr,"\"crosstalk0\":",13) == 0 ){
+        ptr += 13; valstr = ptr;
+        if( sscanf(valstr, "[%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f], ", &ct0[0],&ct0[1],&ct0[2],&ct0[3],&ct0[4],&ct0[5],&ct0[6],&ct0[7],&ct0[8],&ct0[9],&ct0[10],&ct0[11],&ct0[12],&ct0[13],&ct0[14],&ct0[15]) != 16 ){
+          fprintf(stderr,"load_config:errCTA byte %ld\n", ptr-config_data);
+          return(-1);
+        }
+        while(*ptr!='\"'){++ptr;}
+        if( strncmp(ptr,"\"crosstalk1\":",13) != 0 ){
+          fprintf(stderr,"load_config:errCTB byte %ld\n", ptr-config_data);
+          return(-1);
+        } ptr += 13; valstr = ptr;
+        if( sscanf(valstr, "[%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f], ", &ct1[0],&ct1[1],&ct1[2],&ct1[3],&ct1[4],&ct1[5],&ct1[6],&ct1[7],&ct1[8],&ct1[9],&ct1[10],&ct1[11],&ct1[12],&ct1[13],&ct1[14],&ct1[15]) != 16 ){
+          fprintf(stderr,"load_config:errCTC byte %ld\n", ptr-config_data);
+          return(-1);
+        }
+        while(*ptr!='\"'){++ptr;}
+        if( strncmp(ptr,"\"crosstalk2\":",13) != 0 ){
+          fprintf(stderr,"load_config:errCTD byte %ld\n", ptr-config_data);
+          return(-1);
+        } ptr += 13; valstr = ptr;
+        if( sscanf(valstr, "[%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f]", &ct2[0],&ct2[1],&ct2[2],&ct2[3],&ct2[4],&ct2[5],&ct2[6],&ct2[7],&ct2[8],&ct2[9],&ct2[10],&ct2[11],&ct2[12],&ct2[13],&ct2[14],&ct2[15]) != 16 ){
+          fprintf(stderr,"load_config:errCTE byte %ld\n", ptr-config_data);
+          return(-1);
+        }
+        while(*ptr!=']'){++ptr;}
+        ptr+=2;
       }
       cfg->lock=1; edit_calibration(cfg,name,offset,gain,quad,puk1,puk2,puE1,address,type,1); cfg->lock=0;
       if( *ptr++ == ',' ){ continue; } // have skipped ']' if not
@@ -377,7 +584,7 @@ int load_config(Config *cfg, char *filename, char *buffer)
          return(-1);
       } ptr += 9;
       path = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
-      cfg->lock=1; set_directory(cfg, name, path);  cfg->lock=0;
+      cfg->lock=0;
       ++ptr; // skip '}'
       if( *ptr++ == ',' ){ continue; }
       ptr+=2; break; // skip '},'
@@ -433,7 +640,7 @@ int init_config()
    }
    init_default_config(cfg);  // populate default "test" config during testing
    load_config(cfg, DEFAULT_CONFIG, NULL); // attempt to load, ignore any error
-   clear_calibrations(cfg); // Clear the calibrations to default values following server restart
+   //clear_calibrations(cfg); // Clear the calibrations to default values following server restart
    fprintf(stdout,"Initial setup complete :-)\n\n");
    return(0);
 }
@@ -480,13 +687,77 @@ int copy_config(Config *src, Config *dst)
    int i, j;
 
    src->lock = 1;
+   memset(dst, 0, sizeof(Config));      // delete any current vars, gates etc.
+   memcpy(dst, src, sizeof(Config));    // add all of above from live config
    // below is wrong - src array lists can contain holes if things were deleted
    //    use same offsets as in src arrays:
    //          offset = src->calib[i] - &src->calib_array[0];
    //   dst->calib[i] = offset + &dst->calib_array[0]
    for(i=0; i<MAX_CALIB;     i++){dst->calib[i]    = &dst->calib_array[i]; }
    for(i=0; i<MAX_GLOBALS;   i++){dst-> globals[i] = &dst->global_array[i]; }
+   for(i=0; i<MAX_CONDS;     i++){dst->condlist[i] = &dst->cond_array[i]; }
+   for(i=0; i<MAX_GATES;     i++){dst->gatelist[i] = &dst->gate_array[i]; }
 
+   // some of the arrays contain pointers: cond_array has var pointers
+   //                                      gate_array has cond pointers
+   // these have to be copied the long way
+   dst->nconds=0;
+   dst->ngates=0;
+
+   // apply_gates below takes care of var->histo_list_x
+   for(i=0; i<MAX_SORT_VARS; i++){dst->varlist[i].use_count_x = 0; }
+   dst->nusedvar = dst->nuser = 0; // add_histos takes care of these
+   // copy config histograms  ODB histos will follow later
+   /*for(i=0; i<src->nhistos; i++){
+      histo = src->histo_list[i];
+      tmp = ( histo->ybins ) ? histo->yvar->name : NULL;
+      if( add_histo(dst, histo->handle, histo->title, histo->path, histo->xbins, histo->xvar->name, 0, histo->xbins, histo->ybins, tmp, 0, histo->ybins) ){ return(-1); }
+      // apply gates ...
+      for(j=0; j<histo->num_gates; j++){
+         apply_gate(dst, histo->handle, histo->gate_names[j]);
+      }
+   }*/
+   /*
+   // update user_histo_list to point to new histos
+   for(i=0; i<src->nuser; i++){
+      srchist = src->user_histos[i];
+      if( (histo = find_histo(dst, srchist->handle) ) == NULL ){
+            printf("copy_config: impossible error#1\n"); continue;
+      }
+      dst->user_histos[i] = histo;
+   }
+   // update used_vars list to point to dst->sortvars (from src->sortvars)
+   for(i=0; i<src->nusedvar; i++){
+      srcvar = src->usedvars[i];
+      if( (dstvar = find_sortvar(dst, srcvar->name)) == NULL ){
+         printf("copy_config: impossible error#2\n"); continue;
+      }
+      dst->usedvars[i] = dstvar;
+   }
+   // update sortvar histo list to point to dst histos
+   for(i=0; i<src->nsortvar; i++){
+      srcvar = &src->varlist[i];
+      dstvar = &dst->varlist[i];
+      for(j=0; j<srcvar->use_count_x; j++){
+         srchist = srcvar->histo_list_x[i];
+         if( (histo = find_histo(dst, srchist->handle) ) == NULL ){
+            printf("copy_config: impossible error#3\n"); continue;
+         }
+         dstvar->histo_list_x[i] = histo;
+      }
+   }
+   */
+   /* tmp  = (char *)dst;
+   tmp2 = (char *)src;
+   for(i=0; i<sizeof(Config); i+=8){
+      tmp3 = *(long *)(tmp+i);
+      ptr = (char *)tmp3;
+      if( ptr >= tmp2 && ptr <= tmp2+sizeof(Config) ){
+         printf("offset:%d\n", i);
+      }
+   }
+   */
+   //dst->odb_daqsize = src->odb_daqsize;
    src->lock = 0; return(0);
 }
 
@@ -547,6 +818,7 @@ int save_config(Config *cfg, char *filename, int overwrite)
       fprintf(stderr,"save_config: cant open %s to write\n", filename);
       return(-1);
    }
+   //printf("Writing configuration to file: %s\n",filename);
    write_config(cfg, fp);
    fclose(fp);
    return(0);
@@ -582,66 +854,6 @@ Sortvar *find_sortvar(Config *cfg, char *name)
       }
    }
    return(NULL);
-}
-
-/////////////////////////  Global Condition   //////////////////////////////
-
-// every array member has a pointer to itself
-//    [the pointer list entries are swapped etc, but not cleared]
-// same with gates, conditions, variables
-// but *not* used-variables, user-histos
-int add_global(Config *cfg, char *name, int value, int val2)
-{
-   time_t current_time = time(NULL);
-   Global *global;
-   int i, len;
-   for(i=0; i<cfg->nglobal; i++){
-      if( strcmp(cfg->globals[i]->name, name) == 0 &&
-          strlen(cfg->globals[i]->name) == strlen(name) ){ break; }
-   }
-   global = cfg->globals[i];
-   if( i == cfg->nglobal ){ // new global - i is first unused ptr
-      if( cfg->nglobal >= MAX_GLOBALS ){
-         fprintf(stderr,"too many globals for %s\n", name); return(-1);
-      }
-      if( (len=strlen(name)+1) > STRING_LEN ){
-         fprintf(stderr,"truncating globalname: %s\n", name);
-         len = STRING_LEN;
-      }
-      memcpy(global->name, name, len);
-       ++cfg->nglobal;
-   }
-   global->min = value; global->max = val2;
-   cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
-   return(0);
-}
-
-int remove_global(Config *cfg, char *name)
-{
-   Global *global, *lastglobal = cfg->globals[cfg->nglobal];
-   time_t current_time = time(NULL);
-   int i;
-   for(i=0; i<cfg->nglobal; i++){
-      if( strcmp(cfg->globals[i]->name, name) == 0 &&
-          strlen(cfg->globals[i]->name) == strlen(name) ){
-         global = cfg->globals[i]; break;
-      }
-   }
-   if( i == cfg->nglobal ){
-      fprintf(stderr,"can't find global: %s to remove\n", name); return(-1);
-   }
-//   if( global->use_count != 0 ){
-//      fprintf(stderr,"global[%s] still in use[%d]\n", name, global->use_count);
-//      return(-1);
-//   }
-   // if removing final entry - no rearrangement needed
-   if( i != cfg->nglobal-1 ){  // otherwise - swap pointers with last
-      cfg->globals[i             ] = lastglobal;
-      cfg->globals[cfg->nglobal-1] = global;
-   }
-   --cfg->nglobal;
-   cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
-   return(0);
 }
 
 /////////////////////////////   CALIBRATION   /////////////////////////////
@@ -852,6 +1064,7 @@ int edit_calibration(Config *cfg, char *name, float offset, float gain, float qu
       }
       cal->address = address;  cal->datatype = type;
     }
+    //printf("saving config edit_calibration\n");
    cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
    return(0);
 }
@@ -874,6 +1087,7 @@ int set_directory(Config *cfg, char *name, char *path)
       fprintf(stderr,"set_directory: Unknown directory:%s\n", name);
       return(-1);
    }
+   //printf("saving config set_directory\n");
    cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
    return(0);
 }
@@ -910,6 +1124,7 @@ int set_midas_param(Config *cfg, char *name, char *value)
       fprintf(stderr,"set_midas_param: Unknown param:%s\n", name);
       return(-1);
    }
+   //printf("saving config set_midas_param\n");
    cfg->mtime = current_time;  save_config(cfg, DEFAULT_CONFIG, 1);
    return(0);
 }

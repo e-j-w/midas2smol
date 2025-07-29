@@ -1,7 +1,7 @@
 grif-replay
 midas2smol
 run_number
-last.json
+*.json
 *.o
 *.smol
 *.smol*

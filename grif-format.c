@@ -199,7 +199,7 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
          if( ptr->dtype != 0xF && (ptr->chan < 0) && ptr->address != 0xFFFF ){
             ++grif_err[GRIF_ERR_ADDR];
             //if( ++errcount < 100 || (errcount % 1000 == 0) ){
-             fprintf(stderr,"Ignoring Event - Unknown address [0x%04x] returns chan %d\n", ptr->address, ptr->chan);
+             //fprintf(stderr,"Ignoring Event - Unknown address [0x%04x] returns chan %d\n", ptr->address, ptr->chan);
             //}
             return(-1);
          }
@@ -313,7 +313,7 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
             }
          }
          break;
-      case 0xf: fprintf(stderr,"griffin_decode: 0xF.......\n");
+      case 0xf: //fprintf(stderr,"griffin_decode: 0xF.......\n");
                 /* Unassigned packet identifier */ return(-1);
       default:  fprintf(stderr,"griffin_decode: default case\n"); return(-1);
       }

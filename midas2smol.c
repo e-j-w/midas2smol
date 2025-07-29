@@ -16,7 +16,7 @@
 
 int sort_next_file(Config *cfg, Sort_status *sort);
 
-int presort_events_cutoff = 250; // presort window typically much larger, and less processing is done
+int presort_events_cutoff = 256; // presort window typically much larger, and less processing is done
 int coinc_events_cutoff = 256; //64 isn't enough for some high rate data, end up with high WinFull %s...
 char midas_runtitle[SYS_PATH_LENGTH];
 Sort_metrics diagnostics;
@@ -240,14 +240,17 @@ extern char chan_name[MAX_DAQSIZE][CHAN_NAMELEN];
 // => final win of run won't be sorted, as these events will not leave window
 uint64_t insert_presort_win(Grif_event *ptr, int slot, FILE *out)
 {
+   //printf("start insert_presort_win: %i %i\n",presort_window_start, slot);
    uint64_t numSort = 0;
    int win_count, win_end;
    Grif_event *alt;
    long dt;
 
    ///////////////// Presort window (used for suppression/addback)
-   while( presort_window_start != slot ){ alt = &grif_event[presort_window_start];
-   win_count = (slot - presort_window_start+2*PTR_BUFSIZE) % PTR_BUFSIZE;
+   while( presort_window_start != slot ){
+      //printf("while loop: %i %i\n",presort_window_start, slot);
+      alt = &grif_event[presort_window_start];
+      win_count = (slot - presort_window_start+2*PTR_BUFSIZE) % PTR_BUFSIZE;
       dt = ptr->ts - alt->ts; if( dt < 0 ){ dt *= -1; }
 
       // should exit while-loop when no more events outside window
@@ -261,12 +264,16 @@ uint64_t insert_presort_win(Grif_event *ptr, int slot, FILE *out)
       //    ( either because dt > coincwidth OR due to error recovery)
       // NOTE event[slot] is out of window - use slot-1 as window-end
       if( (win_end = slot-1) < 0 ){ win_end = PTR_BUFSIZE-1; } // WRAP
+      //printf("start pre_sort_exit: %i %i\n",presort_window_start, win_end);
       pre_sort_exit(presort_window_start, win_end);
+      //printf("end pre_sort_exit\n");
       numSort += insert_sort_win(alt, presort_window_start, out); // add event to next window
       if( ++presort_window_start >= PTR_BUFSIZE ){ presort_window_start=0; } // WRAP
+      //printf("end while loop iter: %i %i %i\n",presort_window_start, slot, PTR_BUFSIZE);
    }
    // all events outside window have now been removed ...
    pre_sort_enter(presort_window_start, slot);
+   //printf("numSort: %lu\n", numSort);
    return numSort;
 }
 

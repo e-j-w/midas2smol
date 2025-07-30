@@ -35,15 +35,15 @@ int main(int argc, char *argv[])
       fprintf(stdout,"    (last.json) will be assumed.\n\n");
       exit(0);
    }
-   if(argc >= 4){
-      strncpy(configfileName,argv[3],255);
-   }else{
-      strncpy(configfileName,DEFAULT_CONFIG,255);
-   }
+   
    srand(28719747); //seed random number generator (use fixed seed so that results are consistent between sorts)
    Sort_status *sort = &sort_status;
    int web_arg=1;  Config *cfg;
-   init_config();
+   if(argc >= 4){
+      init_config(argv[3]);
+   }else{
+      init_config(DEFAULT_CONFIG);
+   }
    copy_config(configs[0], configs[1]); // copy config0 to cfg1 for sorting
    cfg = configs[1];
    sort->subrun = 0;
@@ -51,7 +51,13 @@ int main(int argc, char *argv[])
 
    strncpy(cfg->out_file,argv[2],SYS_PATH_LENGTH); //setup output filename
    add_sortfile(argv[1]);
-   fprintf(stdout,"MIDAS file: %s (%i subrun(s)), output file: %s\n",argv[1],sort->num_subruns,cfg->out_file);
+   fprintf(stdout,"Config file: %s\n",cfg->configName);
+   if(sort->num_subruns > 1){
+      fprintf(stdout,"MIDAS file: %s (%i subruns)\n",argv[1],sort->num_subruns);
+   }else{
+      fprintf(stdout,"MIDAS file: %s\n",argv[1]);
+   }
+   fprintf(stdout,"Output file: %s\n",cfg->out_file);
    
    if( open_next_sortfiles(sort) == 0 ){
       sort_next_file(cfg, sort);
@@ -121,7 +127,7 @@ int sort_next_file(Config *cfg, Sort_status *sort)
          fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
          fwrite(&psd_vals,sizeof(psd_vals),1,smolfp);
          fclose(smolfp);
-         printf("Wrote %10ld separated events to output file: %s\n",numSortedEvts,cfg->out_file);
+         printf("Wrote %10lu separated events to output file: %s\n",numSortedEvts,cfg->out_file);
       } else {
          printf("Can't open SMOL tree: %s to write\n",cfg->out_file);
          return(0);
@@ -138,13 +144,13 @@ int sort_next_file(Config *cfg, Sort_status *sort)
    cfg->midas_runtime    = diagnostics.midas_last_timestamp+1;
    cfg->midas_runtime   -= cfg->midas_start_time;
    memcpy(cfg->midas_title, midas_runtitle, SYS_PATH_LENGTH);
-   printf("Sorting took %ld seconds\n", end-start);
+   printf("Sorting took %ld seconds (%.3f hours)\n", end-start, (end-start)/3600.0);
    return 0;
 }
 
 extern volatile long grifevent_wrpos;
 volatile long grifevent_rdpos;
-extern Grif_event grif_event[MAX_COINC_EVENTS];
+extern Grif_event grif_event[PTR_BUFSIZE];
 
 extern volatile unsigned long bankbuf_wrpos;
 extern volatile unsigned long bankbuf_rdpos;
@@ -170,7 +176,7 @@ void show_sort_state()
    printf("GRIF: Unpacked:%dKevents  ", (int)(grif_evcount/1000) );
    printf("      Sorted  :%dKevents\n", done_events/1000 );
    printf("     BUF In:%dKevents Out%dKevents [=%d][Cap:%5.1f%%]\n\n",
-          v8, v9, v10, (100.0*v10)/MAX_COINC_EVENTS);
+          v8, v9, v10, (100.0*v10)/PTR_BUFSIZE);
 }
 Sort_status *get_sort_status(){ return( &sort_status ); }
 
@@ -178,7 +184,7 @@ void sort_main(Sort_status *arg, FILE *out)
 {
    int i, len, nxtpos, rd_avail;
    static long grifevent_nxtpos;
-   unsigned int usecs=10000;
+   unsigned int usecs=100;
 
    printf("starting sort_main ...\n");
    grifevent_rdpos = grifevent_nxtpos = nxtpos = 0;
@@ -189,7 +195,7 @@ void sort_main(Sort_status *arg, FILE *out)
       if( rd_avail < 1 ){ usleep(usecs); continue; }
       numSortedEvts += process_event(&grif_event[nxtpos], nxtpos, out);
       //printf("sorted events: %lu\n",numSortedEvts);
-      nxtpos = ++grifevent_nxtpos % MAX_COINC_EVENTS;
+      nxtpos = ++grifevent_nxtpos % PTR_BUFSIZE;
    }
    printf("sort_main finished\n");
 }

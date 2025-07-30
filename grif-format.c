@@ -23,7 +23,7 @@ void dbg_grifbuf(unsigned *evstrt, int reorder){
 }
 
 int debug;
-Grif_event grif_event[MAX_COINC_EVENTS];
+Grif_event grif_event[PTR_BUFSIZE];
 short waveform[MAX_SAMPLE_LEN];
 int     scalar[MAX_SCALAR_LEN];
 int waveforms = 0; // process [1] or ignore them
@@ -33,7 +33,7 @@ volatile long grif_evcount;
 volatile long grifevent_wrpos;
 extern volatile long grifevent_rdpos;
 static int unpack_grif3_event(unsigned *buf, int len, Grif_event *, int);
-//extern Grif_event grif_event[MAX_COINC_EVENTS];
+//extern Grif_event grif_event[PTR_BUFSIZE];
 // for a single coincidence window - can mark start of window wrt latest frag
 // but for multiple windows, may be better to look backwards, as far as req.
 //    (subject to buffer size)
@@ -105,7 +105,7 @@ void grif_main(Sort_status *arg)
       len = wcnt+1; // include word#0
       while(1){ // wait for space to store event ..
          rd_avail = grifevent_wrpos - grifevent_rdpos;
-         if( (wr_avail = MAX_COINC_EVENTS - rd_avail) != 0 ){ break; }
+         if( (wr_avail = PTR_BUFSIZE - rd_avail) != 0 ){ break; }
          usleep(usecs);
       }
       if( unpack_grif3_event(evstart, len, ptr, waveforms) == 0 ){
@@ -117,7 +117,7 @@ void grif_main(Sort_status *arg)
       if( ++evptr >= bufend ){ evptr -= bufsize; }
       ++wcnt; evstart = evptr;  ++grifevent_wrpos;
       eventbuf_rdpos += wcnt; // consume input data here
-      wcnt = 0;  wrpos = grifevent_wrpos %  MAX_COINC_EVENTS;  ++grif_evcount;
+      wcnt = 0;  wrpos = grifevent_wrpos %  PTR_BUFSIZE;  ++grif_evcount;
    }
    arg->grif_sort_done = 1;
    printf("grif_ordered thread finished rd:%ld wr:%ld\n",
@@ -133,7 +133,7 @@ int process_grif3_bank(unsigned *evntbuf, int length, FILE *out)
    int wrpos;
 
    while( ptr < bufend ){
-      wrpos = grifevent_wrpos % MAX_COINC_EVENTS;
+      wrpos = grifevent_wrpos % PTR_BUFSIZE;
       evt = &grif_event[wrpos];
       if( ((*(ptr++)>>28)&0xff) == 0xE ){
          if( unpack_grif3_event(evstrt, ptr-evstrt, evt, 0) == 0 ){

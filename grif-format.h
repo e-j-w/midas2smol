@@ -1,8 +1,7 @@
 #define MAX_SAMPLE_LEN   4096
 #define MAX_SCALAR_LEN   256
-#define MAX_COINC_EVENTS 4096
+#define PTR_BUFSIZE      4096 //changed from grif-replay
 #define MAX_PSD_VALS     16
-#define PTR_BUFSIZE      MAX_COINC_EVENTS
 
 #include <stdint.h> //allows uint8_t and similiar types
 

@@ -23,7 +23,6 @@ extern int presort_window_width;
 extern int sort_window_width;
 
 #define DEFAULT_CONFIG "last.json"
-static char configfileName[256]; //holds the name of the actual config file used
 
 typedef struct global_struct {
    char name[STRING_LEN]; int min; int max;
@@ -65,6 +64,7 @@ typedef struct histo_folder_struct {
 // group config element stuff together, with add/delete/copy fns
 //   to allow quick switch between storing data or pointers (malloc/free)
 typedef struct config_set_struct { int  type; // memory(live,sort) or disk
+   char configName[SYS_PATH_LENGTH]; //holds the name of the actual config file used
    char name[SYS_PATH_LENGTH];     // "live", "sort", or pathname of tar file
    char data_dir[SYS_PATH_LENGTH];   // most recent datafile directory
    char config_dir[SYS_PATH_LENGTH]; // most recent configfile directory
@@ -117,7 +117,7 @@ extern int remove_global(Config *cfg, char *name);
 /////////////////          Config Files         /////////////////////////
 /////////////////////////////////////////////////////////////////////////
 
-extern int init_config();
+extern int init_config(const char *filename);
 extern int init_user_config(Config *cfg);
 extern int init_default_config(Config *cfg);
 extern int write_config(Config *cfg, FILE *fp);
@@ -125,8 +125,8 @@ extern int copy_config(Config *src, Config *dst);
 extern int clear_config(Config *cfg);
 extern int clear_calibrations(Config *cfg);
 extern int delete_config(Config *cfg);
-extern int load_config(Config *cfg, char *filename, char *buffer);
-extern int save_config(Config *cfg, char *filename, int overwrite);
+extern int load_config(Config *cfg, const char *filename, char *buffer);
+extern int save_config(Config *cfg, const char *filename, int overwrite);
 
 extern int set_directory(Config *cfg, char *name, char *path);
 extern int set_midas_param(Config *cfg, char *name, char *value);

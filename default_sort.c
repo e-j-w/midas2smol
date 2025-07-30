@@ -26,7 +26,7 @@ float  pileupk2[MAX_DAQSIZE][7];
 float  pileupE1[MAX_DAQSIZE][7];
 static short *chan_address = addr_table;
 static int subsys_initialized[MAX_SUBSYS];
-extern Grif_event grif_event[MAX_COINC_EVENTS];
+extern Grif_event grif_event[PTR_BUFSIZE];
 extern uint64_t psd_vals[MAX_PSD_VALS];
 
 int presort_window_width= 1940;  // 19.4us needed for all crosstalk corrections. 5us needed for pileup corrections.
@@ -391,7 +391,7 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
     
     ptr = &grif_event[i];
 
-    if( i >= MAX_COINC_EVENTS ){ i=0; } //wrap 
+    if( i >= PTR_BUFSIZE ){ i=0; } //wrap 
     //if( i != win_idx && flag == SORT_ONE ){ break; }
     if( ptr->dtype == 15 ){ if( i==frag_idx ){ break; } continue; } // scalar
     if( ptr->chan == -1 ){

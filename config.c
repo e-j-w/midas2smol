@@ -177,7 +177,7 @@ int write_config(Config *cfg, FILE *fp)
 }
 
 static char config_data[1024*1024];
-int load_config(Config *cfg, char *filename, char *buffer)
+int load_config(Config *cfg, const char *filename, char *buffer)
 {
    int i,j, len, value, val2, val3, val4, val5, val6, address, type, instring;
    char *ptr, *name, *valstr, *title, *path, *var, *var2, op[8], tmp[80];
@@ -197,7 +197,7 @@ int load_config(Config *cfg, char *filename, char *buffer)
          fprintf(stderr,"load_config: cant open %s to read\n", filename);
          return(-1);
       }
-      fprintf(stderr,"load_config: reading %s\n", filename);
+      //fprintf(stderr,"load_config: reading %s\n", filename);
       instring = len = 0;// read line by line, copy to conf_data, skip space
       while( fgets(tmp, 80, fp) != NULL ){ // tmp always null-terminated
          for(i=0; i<strlen(tmp); i++){ // DO NOT SKIP SPACE WITHIN STRINGS
@@ -629,9 +629,9 @@ int load_config(Config *cfg, char *filename, char *buffer)
 // *In case no recent config exists, a default config is setup first*
 //  (this is usually immediately overwritten by the recent config)
 //  (could change this to only setup the default, if recent fails)
-int init_config()
+int init_config(const char *filename)
 {
-  int tmp;
+   int tmp;
    Config *cfg = configs[0];
    if( cfg == NULL ){ // not yet alloc'd live set
       if( (cfg=configs[0]=add_config("live")) == NULL ){ return(-1); }
@@ -639,9 +639,10 @@ int init_config()
       configs[0]->type = configs[1]->type = MEM_CONFIG;
    }
    init_default_config(cfg);  // populate default "test" config during testing
-   load_config(cfg, configfileName, NULL); // attempt to load, ignore any error
+   load_config(cfg, filename, NULL); // attempt to load, ignore any error
+   strncpy(cfg->configName,filename,SYS_PATH_LENGTH-1);
    //clear_calibrations(cfg); // Clear the calibrations to default values following server restart
-   fprintf(stdout,"Initial setup complete :-)\n\n");
+   fprintf(stdout,"Configuration loaded.\n");
    return(0);
 }
 
@@ -804,7 +805,7 @@ int remove_config(Config *cfg)
    return(0);
 }
 
-int save_config(Config *cfg, char *filename, int overwrite)
+int save_config(Config *cfg, const char *filename, int overwrite)
 {
    FILE *fp;
    if( cfg->lock ){ return(-1); } // config file currently being read
@@ -840,7 +841,7 @@ int save_config(Config *cfg, char *filename, int overwrite)
 //   memcpy(cfg->varlist[i].name, name, strlen(name)+1);
 //   memcpy(cfg->varlist[i].title, title, strlen(title)+1);
 //   ++cfg->nsortvar;
-//   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
+//   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
 //  return(0);
 //}
 
@@ -1065,7 +1066,7 @@ int edit_calibration(Config *cfg, char *name, float offset, float gain, float qu
       cal->address = address;  cal->datatype = type;
     }
     //printf("saving config edit_calibration\n");
-   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
+   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
    return(0);
 }
 
@@ -1088,7 +1089,7 @@ int set_directory(Config *cfg, char *name, char *path)
       return(-1);
    }
    //printf("saving config set_directory\n");
-   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
+   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
    return(0);
 }
 
@@ -1125,7 +1126,7 @@ int set_midas_param(Config *cfg, char *name, char *value)
       return(-1);
    }
    //printf("saving config set_midas_param\n");
-   cfg->mtime = current_time;  save_config(cfg, configfileName, 1);
+   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
    return(0);
 }
 
@@ -1266,9 +1267,9 @@ int open_next_sortfiles(Sort_status *sort)
       sprintf(tmp, "%s", subrun_filename(sort, 0) );
    }
    if( (sort->data_fp=fopen(tmp,"r")) == NULL ){
-      fprintf(stderr,"can't open %s to read\n", tmp);  return(-1);
+      fprintf(stderr,"open_next_sortfiles: can't open %s to read\n", tmp);  return(-1);
    }
-   fprintf(stdout,"sorting file: %s\n", tmp);
+   //fprintf(stdout,"sorting file: %s\n", tmp);
    sort->midas_bytes = 0;
    sort->cal_overwrite = 1;
    return(0);
@@ -1287,7 +1288,7 @@ int open_next_subrun(Sort_status *sort)
    }
    filename = subrun_filename(sort, ++sort->subrun);
    if( (sort->data_fp=fopen(filename,"r")) == NULL ){
-      fprintf(stderr,"can't open %s to read\n", filename);  return(-1);
+      fprintf(stderr,"open_next_subrun: can't open %s to read\n", filename);  return(-1);
    }
    fprintf(stdout,"\n================================================\n");
    fprintf(stdout,"=============  SORTING SUBRUN %3d  =============\n", sort->subrun);

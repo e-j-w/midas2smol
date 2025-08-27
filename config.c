@@ -633,11 +633,10 @@ int init_config(const char *filename)
       if( (configs[1]=add_config("sort")) == NULL ){ return(-1); }
       configs[0]->type = configs[1]->type = MEM_CONFIG;
    }
-   init_default_config(cfg);  // populate default "test" config during testing
    load_config(cfg, filename, NULL); // attempt to load, ignore any error
    strncpy(cfg->configName,filename,SYS_PATH_LENGTH-1);
    //clear_calibrations(cfg); // Clear the calibrations to default values following server restart
-   fprintf(stdout,"Configuration loaded.\n");
+   fprintf(stdout,"Configuration loaded from file: %s\n",filename);
    return(0);
 }
 

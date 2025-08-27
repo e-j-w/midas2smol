@@ -1,5 +1,5 @@
 /* read midas data files
- set sources=( midas2smol.c midas-format.c grif-format.c config.c reorder.c user_sort.c default_sort.c test_config.c )
+ set sources=( midas2smol.c midas-format.c grif-format.c config.c reorder.c user_sort.c default_sort.c )
  gcc -g     -o midas2smol $sources -rdynamic -ldl -lm -lpthread
  gcc -g -O3 -o midas2smol $sources -rdynamic -ldl -lm -lpthread
 */
@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
 
    strncpy(cfg->out_file,argv[2],SYS_PATH_LENGTH-1); //setup output filename
    add_sortfile(argv[1]);
-   fprintf(stdout,"Config file: %s\n",cfg->configName);
    if(sort->num_subruns > 1){
       fprintf(stdout,"MIDAS file: %s (%i subruns)\n",argv[1],sort->num_subruns);
    }else{

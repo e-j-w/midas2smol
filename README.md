@@ -31,5 +31,3 @@ ie. why this is in a separate repo:
 ## Known issues
 - Number of sorted events is not fully consistent each time the code is run.
 - Timing is seemingly not consistent with GRSISort, though seems ok for the most part.
-- Calibration is read from the ODB file, will want to investigate whether to support GRSISort cal files.
-- Pileup events are discarded for now (intention is to properly correct for pileup at a later point).

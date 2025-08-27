@@ -34,7 +34,7 @@ void reorder_status(int current_time)
    sum = err[0] + err[2] + err[3] + err[ERR_LATE_IN] + err[5] + err[ERR_LATE_OUT] + err[7];// err[8] is in addition to other
                                                                       // errors - do not add to total
    printf("Reorder: in:%10ld out:%10ld err:%10ld[%5.1f%%] [Desync:%d]\n         ",
-          tsevents_in, tsevents_out, sum, (unsigned long)((100.0*sum)/tsevents_in), err[8] );
+          tsevents_in, tsevents_out, sum, (double)((100.0*sum)/tsevents_in), err[8] );
    printf("[init:%d format:%d length:%d early:%d late:%d,%d, unk:%d]\n",
           err[2], err[0], err[3], err[5], err[ERR_LATE_IN], err[ERR_LATE_OUT], err[7] );
 }
@@ -68,13 +68,12 @@ int reorder_init[MAX_GRIFC];
 pthread_mutex_t nxtlock;
 void reorder_main(Sort_status *arg)
 {
-   int ev_done, ts_slot, len, startup, *err = diagnostics.reorder_error;
-   int i,  grifc,  type,  rd_avail,  ts_stat,  err_format;
+   int ev_done, ts_slot, len, *err = diagnostics.reorder_error;
+   int i,  grifc=0,  type,  rd_avail,  ts_stat,  err_format;
    unsigned int usecs=1000, *evptr, *evstart, *bufend;
    volatile Tsbuf *bufptr, *nxtptr, *newptr;
-   unsigned long ts, tslo;
+   unsigned long ts=0, tslo=0;
 
-   startup = 1;
    memset(err,           0, REORDER_ERRTYPES*sizeof(int));
    //for(i=0; i<MAX_GRIFC; i++){ reorder_init[i] = INIT_WAIT; }
    printf("starting reorder input ...\n");
@@ -202,7 +201,7 @@ void reorder_main(Sort_status *arg)
 
 void reorder_out(Sort_status *arg)
 {
-   int i, j, wr_avail, wrpos, ts_slot, *err;
+   int i, wr_avail, wrpos, ts_slot, *err;
    unsigned long bucket_length = (unsigned long)(1<<BUCKET_SIZE_BITS);
    volatile Tsbuf *buf, *nxt;
    unsigned long ts, prev_ts;

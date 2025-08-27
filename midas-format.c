@@ -13,9 +13,6 @@ static int recbufpos, recordlen;
 
 static int errcount;
 
-static int bank_buffer[MAX_BANK_SIZE];
-static int bankpos, bank_len;
-
 static Midas_event_header          ev_head;
 static Midas_allbank_header   allbank_head;
 static Midas_bank_header         bank_head;
@@ -27,8 +24,8 @@ static void swapInt (char* b, int len)
 { char t; while( len > 0 ){ t=b[0]; b[0]=b[3]; b[3]=t; t=b[1]; b[1]=b[2]; b[2]=t; b+=4; len-=4; } }
 static void swapShort(char* b, int len)
 { char t; while( len > 0 ){ t=b[0]; b[0]=b[1]; b[1]=t; b+=2; len-=2; } }
-static void swapWords (char* b, int len)
-{ char t; while( len > 0 ){ t=b[0]; b[0]=b[2]; b[2]=t; t=b[1]; b[1]=b[3]; b[3]=t; b+=4; len-=4; } }
+/*static void swapWords (char* b, int len)
+{ char t; while( len > 0 ){ t=b[0]; b[0]=b[2]; b[2]=t; t=b[1]; b[1]=b[3]; b[3]=t; b+=4; len-=4; } }*/
 
 extern Sort_metrics diagnostics;
 void midas_status(int current_time)
@@ -262,7 +259,6 @@ void midas_main(Sort_status *arg)
    unsigned int usecs=100, *ptr;
    //static int evcount;
    char *bank_name;
-   time_t tstamp;
    extern int process_grif3_bank(unsigned *buf, int len); // if single thread
 
    bankbuf_wrpos = bankbuf_rdpos = 0;
@@ -339,7 +335,7 @@ int next_record(Sort_status *arg)
 static int evbase; // recbufpos at start of event
 int next_event(Sort_status *arg)
 {
-   int bytes, bytes_done, bytes_avail, bytes_remain;
+   //int bytes, bytes_done, bytes_avail, bytes_remain;
 
    // check if full event available, if not, grab new record
    while( recordlen-recbufpos <                                 MIDAS_HDRLEN ||

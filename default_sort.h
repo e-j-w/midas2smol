@@ -28,22 +28,6 @@
 #define SUBSYS_TAC_ZDS  19
 #define SUBSYS_TAC_ART  20
 #define SUBSYS_UNKNOWN  23
-static char subsys_handle[MAX_SUBSYS][8] = {
-  "GRGA", "PAC",  "LBL",  "RCS",
-  "ARTA", "ZDSA", "LBT",  "LBS",
-  "BGO",  "SEP",  "DSC",  "DSW",
-  "DSG", "XXX1", "XXX2", "XXX3",
-  "GRGB", "ARTB", "ZDSB", "", // secondary names start after #16
-  "",     "",     "",     "UNK"
-};
-static char subsys_name[MAX_SUBSYS][STRING_LEN] = {
-  "Griffin", "PACES",   "LaBrX",   "RCMP",     //  0- 3
-  "ARIES",   "ZDSA",    "TAC_LBL",   "LaBrS",    //  4- 7
-  "BGO",     "Sceptar", "Descant", "DES_WALL", //  8-11
-  "Des_Ancil", "Ignore1", "Ignore2", "Ignore3",  // 12-15
-  "Grif_B",  "ARS_B",   "ZDS_B",   "TAC_ZDS",      // 16-19
-  "TAC_ART",      "",        "",        "Unknown"   // 20-23
-}; // final entry will be used if not found - make sure it is not empty
 // #####################################################################
 
 //#######################################################################

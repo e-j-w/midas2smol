@@ -125,8 +125,8 @@ int GetIDfromAddress(unsigned short addr){ // address must be an unsigned short
 //      => all other window events are BEFORE the current event
 int pre_sort_enter(int start_idx, int frag_idx)
 {
-  Grif_event *alt, *ptr = &grif_event[frag_idx];
-  float energy, ecal;
+  Grif_event *ptr = &grif_event[frag_idx];
+  float energy;
   int chan = ptr->chan;
 
   // Protect against invalid channel numbers
@@ -179,8 +179,7 @@ int pre_sort_exit(int frag_idx, int end_idx)
 {
   Grif_event *alt, *ptr = &grif_event[frag_idx];
   int i, dt;
-  int chan,chan2,found,pos;
-  float energy,ecal,correction;
+  int chan,chan2;
 
   // Assign chan local variable and check it is a valid channel number
   if( (chan=ptr->chan)<0 || ptr->chan >= odb_daqsize ){
@@ -423,8 +422,9 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                 fprintf(stderr,"WARNING: too many hits in win_idx %i, frag_idx %i\n",win_idx,frag_idx);
                 break;
               }
-              if((ptr->ecal > 0.0f)&&(ptr->ecal < 16384.0f)){ //try to filter out weird high energy stuff
+              if((ptr->ecal > 5.0f)&&(ptr->ecal < 16384.0f)){ //try to filter out weird low and high energy stuff
                 double grifT = getGrifTime(ptr);
+                double CFDDiff = grifT - (double)(ptr->ts)*10.0; //difference between timestamp and CFD corrected time, in ns
                 /*if(grifT > 1.0E19){
                   printf("fill_smol_entry - ts: %lu, cfd: %i, time in ns: %f",ptr->ts,ptr->cfd,grifT);
                   getc(stdin);
@@ -442,6 +442,13 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                 if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core >= 64){
                   fprintf(stderr,"WARNING: invalid GRIFFIN core: %u",sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core);
                   break;
+                }
+                if(ptr->pu_class != PU_SINGLE_HIT){
+                  sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core |= (uint8_t)((uint8_t)(1) << 7); //set pileup flag
+                }
+                if(fabs(CFDDiff) > 300.0){
+                  //printf("CFD fail\n");
+                  sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core |= (uint8_t)((uint8_t)(1) << 6); //set CFD fail flag
                 }
                 //filter out duplicate data
                 uint8_t dupFound = 0;
@@ -540,14 +547,14 @@ static char odb_handle[MAX_ODB_SUBSYS][8] = {
 };
 
 static char   path[256];
-static char dirname[64],value[32],type[32];
+static char dirname[64],value[32];
 extern char midas_runtitle[SYS_PATH_LENGTH];
 
 static void *arrayptr;
 int read_odb_items(int len, int *bank_data)
 {
-   char *path_ptr, *ptr, *str, *odb_data = (char *)bank_data, posn[2];
-   int i, c = '<', d = '>', dtype=0, active=0, index=0;
+   char *path_ptr, *ptr, *str, *odb_data = (char *)bank_data;
+   int i=0, c = '<', d = '>', dtype=0, active=0, index=0;
    ptr = odb_data;  path_ptr = path;
    while(1){
       if( (str = strchr(ptr,c)) == NULL ){ break; }

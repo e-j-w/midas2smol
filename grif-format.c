@@ -65,7 +65,7 @@ void grif_status(int current_time)
 
 void grif_main(Sort_status *arg)
 {
-   int i, wrpos, len, rd_avail, wr_avail, wcnt, wrap;
+   int wrpos, len, rd_avail, wr_avail, wcnt, wrap;
    unsigned bufsize, *bufstart, *bufend, *evstart, *evptr;
    unsigned int usecs=100;
    Grif_event *ptr;
@@ -150,9 +150,9 @@ extern int reorder_events_read;
 // header different - no multi qt's, integral bits changed
 int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int process_waveforms)
 {
-   int i, ebad, type, value, qtcount, master_port, grifc_port, done=0;
-   unsigned int val32, *evstrt = evntbuf;
-   static int savelen, prevtrig, errcount;
+   int i, type, value, qtcount=0;
+   unsigned int val32;
+   //static int savelen, prevtrig, errcount;
    int *wave_ptr = NULL;  int discard = 0;
 
    if( debug ){ printf("--CLR EVT[%4ld]\n", ptr - grif_event ); }
@@ -172,28 +172,28 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
             ++grif_err[GRIF_ERR_HDR];
             //fprintf(stderr,"Event %d(chan%d) 0x8 not at start of data\n",
             //   grif_evcount, ptr->chan );
-	 }
-	 qtcount = 0;
+	      }
+         qtcount = 0;
          ptr->dtype  = ((value & 0x000000F) >>  0);
 
-  //       if( ptr->dtype == 10 || ptr->dtype==11 ){
-	 //   printf("RCS\n");
-	// }
+         // if( ptr->dtype == 10 || ptr->dtype==11 ){
+         //   printf("RCS\n");
+         // }
          ptr->address= ((value & 0xFFFF0) >>  4);
-	 // ptr->address >= 0x8000 - currently this will be caen data events
-	 //   which have had their address altered to allow reordering
+         // ptr->address >= 0x8000 - currently this will be caen data events
+         //   which have had their address altered to allow reordering
          //   now the address should be changed back to what it was
          if( ptr->address == 0xFFFF ){
             val32 -= 0x80000000;
          }
          if( (unsigned)(ptr->address) >= 0x8000 ){
-	    extern int grifc_to_boardid[16];
-	    int board_id, grifc;
+            extern int grifc_to_boardid[16];
+            int board_id, grifc;
             grifc = (ptr->address >> 12 ) & 0xF;
-	    if( (board_id = grifc_to_boardid[grifc]) != -1 ){
-	       ptr->address = 0x8000 + (board_id * 0x100) + (ptr->address & 0xFF);
+            if( (board_id = grifc_to_boardid[grifc]) != -1 ){
+               ptr->address = 0x8000 + (board_id * 0x100) + (ptr->address & 0xFF);
             }
-	 }
+	      }
          // fprintf(stdout,"%d\n",ptr->address);
          ptr->chan = address_chan[(unsigned short)ptr->address];
          if( ptr->dtype != 0xF && (ptr->chan < 0) && ptr->address != 0xFFFF ){
@@ -205,7 +205,7 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
          }
          ptr->alt_chan = -1; // initialize as -1, used in addback
          //wave_ptr  = &ptr->waveform_length;     /* should be zero here */
- 	 break;
+ 	      break;
       case 0x9:                      /* Channel Trigger Counter [AND MODE] */
          ptr->trig_req =  value & 0x0fffffff;
          break;
@@ -270,7 +270,7 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
             switch(++qtcount){
             case 1:  /* Energy */
             ptr->q1  = (ptr->dtype==6) ? val32 : val32 & 0x01ffffff;
-            ebad = (value >> 25) & 0x1;
+            //ebad = (value >> 25) & 0x1;
             ptr-> integ1 |= ((val32 & 0x7c000000) >> 17); ptr->nhit = 1;
             break;
             case 2: /* CFD Time */
@@ -292,7 +292,7 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
             case 4:  /* descant short*/
                if(ptr->dtype==6){ ptr->cc_short  = val32; }
                else { ptr->q2 =  val32 & 0x3FFFFF;
-                 ebad  = (val32 >> 25) & 0x1;
+                 //ebad  = (val32 >> 25) & 0x1;
                }
                break;
             case 5:
@@ -300,10 +300,10 @@ int unpack_grif3_event(unsigned *evntbuf, int evlen, Grif_event *ptr, int proces
                ptr->integ4 = ((val32 & 0x3FFF0000) >> 16);
                break;
             case 6: ptr->q3 =  val32 & 0x3FFFFF;
-               ebad  = (val32 >> 25) & 0x1;
+               //ebad  = (val32 >> 25) & 0x1;
                break;
             case 7: ptr->q4 =  val32 & 0x3FFFFF;
-               ebad  = (val32 >> 25) & 0x1;
+               //ebad  = (val32 >> 25) & 0x1;
                break;
             default:
                ++grif_err[GRIF_ERR_PHWORDS];

@@ -46,7 +46,7 @@ typedef struct
 {
 	float timeOffsetNs; //relative to evtTimeNs
 	float energy; //calibrated energy in keV
-	uint8_t core; //0-indexed
+	uint8_t core; //bits 0-5: HPGe crystal, 0-indexed; bit 6: CFD fail flag (|ts time - CFD time| > 300 ns), bit 7: pileup flag (in case we want to discard pileup later)
 }hpge_hit;
 
 //struct to hold an event resident in memory,

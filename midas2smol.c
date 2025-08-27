@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
    
    srand(28719747); //seed random number generator (use fixed seed so that results are consistent between sorts)
    Sort_status *sort = &sort_status;
-   int web_arg=1;  Config *cfg;
+   Config *cfg;
    if(argc >= 4){
       init_config(argv[3]);
    }else{
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
    sort->subrun = 0;
    sort->single_thread = 0;
 
-   strncpy(cfg->out_file,argv[2],SYS_PATH_LENGTH); //setup output filename
+   strncpy(cfg->out_file,argv[2],SYS_PATH_LENGTH-1); //setup output filename
    add_sortfile(argv[1]);
    fprintf(stdout,"Config file: %s\n",cfg->configName);
    if(sort->num_subruns > 1){
@@ -182,7 +182,7 @@ Sort_status *get_sort_status(){ return( &sort_status ); }
 
 void sort_main(Sort_status *arg, FILE *out)
 {
-   int i, len, nxtpos, rd_avail;
+   int nxtpos, rd_avail;
    static long grifevent_nxtpos;
    unsigned int usecs=100;
 

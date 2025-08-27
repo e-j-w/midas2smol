@@ -107,8 +107,8 @@ Config *configs[MAX_CONFIGS];
 int write_config(Config *cfg, FILE *fp)
 {
    Cal_coeff *calib;  Global *global;
-   Sortvar *var;      Cond *cond;        Gate *gate;
-   int i, j, first;
+   Sortvar *var;
+   int i;
    char tmp[64];
 
    fprintf(fp,"{\n   \"Analyzer\" : [\n");
@@ -121,7 +121,7 @@ int write_config(Config *cfg, FILE *fp)
    }
    fprintf(fp,"      ]},\n");
    fprintf(fp,"      {\"Gates\" : [\n");
-   fprintf(fp,"      ]},\n"); first = 1;
+   fprintf(fp,"      ]},\n");
    fprintf(fp,"      {\"Histograms\" : [\n");
    fprintf(fp,"\n      ]},\n");
    fprintf(fp,"      {\"Globals\" : [\n");
@@ -179,17 +179,14 @@ int write_config(Config *cfg, FILE *fp)
 static char config_data[1024*1024];
 int load_config(Config *cfg, const char *filename, char *buffer)
 {
-   int i,j, len, value, val2, val3, val4, val5, val6, address, type, instring;
-   char *ptr, *name, *valstr, *title, *path, *var, *var2, op[8], tmp[80];
+   int i, len, value, val2, val3, val4, val5, val6, address, type, instring;
+   char *ptr, *name, *valstr, op[8], tmp[80];
    float gain, offset, quad;
    float puk1[7], puk2[7], puE1[7];
    float ct0[16], ct1[16], ct2[16];
    // Initialize values to defaults
    // Values of -1 are ignored by edit_calibration - use this for all channels that are not HPGe to avoid bloating the size of the config
    float puk_reset[7]={1,0,0,0,0,0,0}, puE1_reset[7]={0,0,0,0,0,0,0}, pu_ignore[7]={-1,-1,-1,-1,-1,-1,-1};
-   float ct_reset[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, ct_ignore[16]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-   Config *tmp_cfg;
-   Cond *cond;
    FILE *fp;
 
    if( filename != NULL ){ len = strlen(filename);
@@ -236,7 +233,7 @@ int load_config(Config *cfg, const char *filename, char *buffer)
          fprintf(stderr,"load_config: err4 byte %ld\n", ptr-config_data);
          return(-1);
       } ptr += 10;
-      title = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
       // VARIABLES CURRENTLY HARDCODED
       //  - this section of config is only used for passing to viewer
       //cfg->lock=1; add_variable(cfg, name, title);  cfg->lock=0;
@@ -268,7 +265,7 @@ int load_config(Config *cfg, const char *filename, char *buffer)
          if( strncmp(ptr,",\"Variable\":\"", 13) != 0 ){
             fprintf(stderr,"load_config: err8b byte %ld\n", ptr-config_data);
             return(-1);
-         } ptr += 13; var = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+         } ptr += 13; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
          if( strncmp(ptr,",\"Logic\":\"", 10) != 0 ){
             fprintf(stderr,"load_config: err8c byte %ld\n", ptr-config_data);
             return(-1);
@@ -314,17 +311,16 @@ int load_config(Config *cfg, const char *filename, char *buffer)
       //   return(-1);
       //} ptr += 10;
       //title = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
-      title = name;
       if( strncmp(ptr,",\"path\":\"", 9) != 0 ){
          fprintf(stderr,"load_config: errD byte %ld\n", ptr-config_data);
          return(-1);
       } ptr += 9;
-      path = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
       if( strncmp(ptr,",\"Xvariable\":\"", 14) != 0 ){
          fprintf(stderr,"load_config: errE byte %ld\n", ptr-config_data);
          return(-1);
       } ptr += 14;
-      var = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
       if( strncmp(ptr,",\"Xmin\":", 8) != 0 ){
          fprintf(stderr,"load_config: errFa byte %ld\n", ptr-config_data);
          return(-1);
@@ -356,7 +352,7 @@ int load_config(Config *cfg, const char *filename, char *buffer)
          cfg->lock=0;
       } else {
          ptr += 13;
-         var2 = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+         while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
          if( strncmp(ptr,",\"Ymin\":", 8) != 0 ){
             fprintf(stderr,"load_config: errG byte %ld\n", ptr-config_data);
             return(-1);
@@ -583,7 +579,7 @@ int load_config(Config *cfg, const char *filename, char *buffer)
          fprintf(stderr,"load_config: errZC byte %ld\n", ptr-config_data);
          return(-1);
       } ptr += 9;
-      path = ptr; while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
+      while( *ptr != '"' ){ ++ptr; } *ptr++ = 0;
       cfg->lock=0;
       ++ptr; // skip '}'
       if( *ptr++ == ',' ){ continue; }
@@ -631,7 +627,6 @@ int load_config(Config *cfg, const char *filename, char *buffer)
 //  (could change this to only setup the default, if recent fails)
 int init_config(const char *filename)
 {
-   int tmp;
    Config *cfg = configs[0];
    if( cfg == NULL ){ // not yet alloc'd live set
       if( (cfg=configs[0]=add_config("live")) == NULL ){ return(-1); }
@@ -681,11 +676,7 @@ int clear_calibrations(Config *cfg)
 
 int copy_config(Config *src, Config *dst)
 {
-   Global *global;
-   Sortvar *srcvar, *dstvar;
-   char *tmp, *tmp2, *ptr;
-   long *tmp3;
-   int i, j;
+   int i;
 
    src->lock = 1;
    memset(dst, 0, sizeof(Config));      // delete any current vars, gates etc.
@@ -1016,7 +1007,7 @@ puk1[0] = puk2[0] = 1; // set default factor as 1 not zero
 int edit_calibration(Config *cfg, char *name, float offset, float gain, float quad, float puk1[7], float puk2[7], float puE1[7], int address, int type, int overwrite)
 {
    time_t current_time = time(NULL);
-   int i,j, len, arg;
+   int i,j, len;
    Cal_coeff *cal;
 
    for(i=0; i<cfg->ncal; i++){ cal = cfg->calib[i];
@@ -1202,14 +1193,13 @@ int run_number(Sort_status *arg, char *name);
 char *subrun_filename(Sort_status *sort, int subrun);
 int add_sortfile(char *path)
 {
-   int i, plen, dlen, ext_len, hlen, clen;
-   char ptr, tmp[256], *fname;
+   int i, plen, dlen;
+   char *fname;
    Sort_status *sort;
    Config *cfg = configs[0];
 
    sort = get_sort_status();
    plen=strlen(path);
-   ext_len = ( strncmp(path+plen-4, ".mid", 4) == 0 ) ? 4 : 0;
    for(i=plen; i>=0; i--){ if( path[i] == '/' ){ ++i; break; } }
    if( (dlen = i) == -1 ){ dlen = 0; } // no directory separator in path
    if( (sort->data_dir = malloc((size_t)((unsigned int)dlen + 2))) == NULL ){
@@ -1260,7 +1250,7 @@ int add_sortfile(char *path)
 //////////////////////////////////////////////////////////
 int open_next_sortfiles(Sort_status *sort)
 {
-   char ptr, tmp[256];
+   char tmp[256];
    if( sort->num_subruns == 0 ){
       sprintf(tmp, "%s", sort->data_name);
    } else {
@@ -1450,24 +1440,24 @@ int send_datafile_list(char *path, int fd, int type)
           //strncmp(d_ent->d_name+nlen-8, ".mid.bz2", 8) != 0 ){
          continue; // Not Midas DataFilename Extension
       }
-      sprintf(tmp,"%s/%s", path, d_ent->d_name);
+      snprintf(tmp,256,"%s/%s", path, d_ent->d_name);
       if( stat(tmp, &statbuf) != 0 ){
          fprintf(stderr,"can't stat %s\n", tmp); statbuf.st_size = 1;
       }
       //put_line(fd, d_ent->d_name, strlen(d_ent->d_name) );
-      sprintf(tmp," , %ld ", (long)statbuf.st_size);
+      snprintf(tmp,256," , %ld ", (long)statbuf.st_size);
       //put_line(fd, tmp, strlen(tmp) );
       if( (entry % 1000) == 0 ){ printf("Entry: %d\n", entry); }
       if( type == 0 ){ continue; }
 
       if( subrun == 0 ){
-         sprintf(tmp,"%s/%s", path, d_ent->d_name);
+         snprintf(tmp,256,"%s/%s", path, d_ent->d_name);
          read_datafile_info(tmp_srt, tmp);
       } else { tmp_srt->file_info[0][0] = tmp_srt->file_info[1][0] = 0; }
       if( strlen(tmp_srt->file_info[0]) > 0 ){
-         sprintf(tmp," , %s ", tmp_srt->file_info[0] );
+         snprintf(tmp,256," , %s ", tmp_srt->file_info[0] );
       } else {
-         sprintf(tmp," , %s ", tmp_srt->file_info[1] );
+         snprintf(tmp,256," , %s ", tmp_srt->file_info[1] );
       }
       //put_line(fd, tmp, strlen(tmp) );
    }

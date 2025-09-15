@@ -423,21 +423,11 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                 break;
               }
               if((ptr->ecal > 5.0f)&&(ptr->ecal < 16384.0f)){ //try to filter out weird low and high energy stuff
-                double grifT = getGrifTime(ptr);
-                double CFDDiff = grifT - (double)(ptr->ts)*10.0; //difference between timestamp and CFD corrected time, in ns
-                /*if(grifT > 1.0E19){
-                  printf("fill_smol_entry - ts: %lu, cfd: %i, time in ns: %f",ptr->ts,ptr->cfd,grifT);
-                  getc(stdin);
-                }*/
-                /*if(grifT > 5.0E10){
-                  printf("longer time present (%f)\n",grifT);
-                }*/
-                if(sortedEvt->header.evtTimeNs == 0){
-                  sortedEvt->header.evtTimeNs = grifT;
-                }
-                //printf("Energies %i %i %f\n",ptr->energy,ptr->ecal,ptr->ecal);
+                
+                
+                //Handle energy and position
+                //printf("Energy: %f\n",ptr->ecal);
                 sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy = ptr->ecal;
-                sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
                 sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core = (uint8_t)(c1);
                 if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core >= 64){
                   fprintf(stderr,"WARNING: invalid GRIFFIN core: %u",sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core);
@@ -446,14 +436,26 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                 if(ptr->pu_class != PU_SINGLE_HIT){
                   sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core |= (uint8_t)((uint8_t)(1) << 7); //set pileup flag
                 }
+
+                //Handle timing
+                //has to be done AFTER position is set, since the CFD fail flag modifies the position value
+                double grifT = getGrifTime(ptr);
+                double CFDDiff = grifT - (double)(ptr->ts)*10.0; //difference between timestamp and CFD corrected time, in ns
                 if(fabs(CFDDiff) > 300.0){
-                  //printf("CFD fail\n");
+                  //printf("CFD fail, diff: %f\n",CFDDiff);
                   sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core |= (uint8_t)((uint8_t)(1) << 6); //set CFD fail flag
+                  grifT = (double)(ptr->ts)*10.0; //use timestamp time if the CFD fails
                 }
+                //printf("time: %f\n",grifT);
+                if(sortedEvt->header.evtTimeNs == 0){
+                  sortedEvt->header.evtTimeNs = grifT;
+                }
+                sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
+                
                 //filter out duplicate data
                 uint8_t dupFound = 0;
                 for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
-                  if(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core == sortedEvt->hpgeHit[i].core){
+                  if((sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core & 63U) == (sortedEvt->hpgeHit[i].core & 63U)){
                     if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 200.0){
                       dupFound = 1; //duplicate hit found
                     }

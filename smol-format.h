@@ -44,7 +44,7 @@ typedef struct
 
 typedef struct
 {
-	float timeOffsetNs; //relative to evtTimeNs
+	float timeOffsetNs; //relative to evtTimeNs, CFD time if the CFD fail flag is not set, otherwise timestamp-derived time
 	float energy; //calibrated energy in keV
 	uint8_t core; //bits 0-5: HPGe crystal, 0-indexed; bit 6: CFD fail flag (|ts time - CFD time| > 300 ns), bit 7: pileup flag (in case we want to discard pileup later)
 }hpge_hit;

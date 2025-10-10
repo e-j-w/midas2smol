@@ -126,7 +126,7 @@ int sort_next_file(Config *cfg, Sort_status *sort)
          fwrite(&numSortedEvts,sizeof(uint64_t),1,smolfp);
          fwrite(&psd_vals,sizeof(psd_vals),1,smolfp);
          fclose(smolfp);
-         printf("Wrote %10lu separated events to output file: %s\n",numSortedEvts,cfg->out_file);
+         printf("Wrote %10lu separated events to output file: %s\n",numSortedEvts & 0xFFFFFFFFFFFF,cfg->out_file);
       } else {
          printf("Can't open SMOL tree: %s to write\n",cfg->out_file);
          return(0);

@@ -366,6 +366,7 @@ if(dt>500){ return(0); } // Restrict pileup handling to 5 microseconds. 8 micros
 
 //writes data for a single sorted_evt in a SMOL tree
 int lastWinIdx = -1;
+uint64_t firstHitTs;
 uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
 {
   //fprintf(stdout,"Called fill entry for win: %i, frag: %i, last win: %i\n",win_idx,frag_idx,lastWinIdx);
@@ -447,29 +448,50 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
                   grifT = (double)(ptr->ts)*10.0; //use timestamp time if the CFD fails
                 }
                 //printf("time: %f\n",grifT);
-                if(sortedEvt->header.evtTimeNs == 0){
-                  sortedEvt->header.evtTimeNs = grifT;
-                }
-                sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
-                
-                //filter out duplicate data
-                uint8_t dupFound = 0;
-                for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
-                  if((sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core & 63U) == (sortedEvt->hpgeHit[i].core & 63U)){
-                    if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 200.0){
-                      dupFound = 1; //duplicate hit found
-                    }
+
+                if(grifT > 0.0){
+                  if(sortedEvt->header.evtTimeNs == 0){
+                    sortedEvt->header.evtTimeNs = grifT;
+                    firstHitTs = ptr->ts;
                   }
-                  /*if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 1.0){
-                    printf("  hit: %u, core: %u, time: %f ns, offset: %f ns\n",i,sortedEvt->hpgeHit[i].core,sortedEvt->header.evtTimeNs + sortedEvt->hpgeHit[i].timeOffsetNs,sortedEvt->hpgeHit[i].timeOffsetNs);
-                    printf("  hit: %u, core: %u, time: %f ns, offset: %f ns\n",sortedEvt->header.numHPGeHits,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core,sortedEvt->header.evtTimeNs + sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs);
-                  }*/
+                  sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs = (float)(grifT - sortedEvt->header.evtTimeNs);
+                  
+                  int tsDiff = (int)(ptr->ts - firstHitTs);
+                  if(tsDiff < 0){
+                    printf("Negative timestamp difference:\n",firstHitTs);
+                    printf("  Hit 0: %lu\n",firstHitTs);
+                    printf("  Hit %i: %lu\n",sortedEvt->header.numHPGeHits,ptr->ts);
+                    sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].tsDiff = 255U;
+                  }else if(tsDiff <= 255){
+                    sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].tsDiff = (uint8_t)(tsDiff);
+                  }else{
+                    printf("Timestamp difference exceeding 255:\n",firstHitTs);
+                    printf("  Hit 0: %lu\n",firstHitTs);
+                    printf("  Hit %i: %lu\n",sortedEvt->header.numHPGeHits,ptr->ts);
+                    sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].tsDiff = 255U;
+                  }
+                  //printf("tsDiff: %i\n",tsDiff);
+
+                  //filter out duplicate data
+                  uint8_t dupFound = 0;
+                  for(int i = 0; i<sortedEvt->header.numHPGeHits;i++){
+                    if((sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core & 63U) == (sortedEvt->hpgeHit[i].core & 63U)){
+                      if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 200.0){
+                        dupFound = 1; //duplicate hit found
+                      }
+                    }
+                    /*if(fabs(sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs - sortedEvt->hpgeHit[i].timeOffsetNs) < 1.0){
+                      printf("  hit: %u, core: %u, time: %f ns, offset: %f ns\n",i,sortedEvt->hpgeHit[i].core,sortedEvt->header.evtTimeNs + sortedEvt->hpgeHit[i].timeOffsetNs,sortedEvt->hpgeHit[i].timeOffsetNs);
+                      printf("  hit: %u, core: %u, time: %f ns, offset: %f ns\n",sortedEvt->header.numHPGeHits,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core,sortedEvt->header.evtTimeNs + sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].timeOffsetNs);
+                    }*/
+                  }
+                  if(dupFound == 0){
+                    //hit is not a duplicate, so store it
+                    //printf("passed hit: %u, core: %u, energy: %0.3f, suppress: %i, ts: %li, cfd: %i, time: %0.2f ns\n",sortedEvt->header.numHPGeHits,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy,ptr->suppress,ptr->ts,ptr->cfd,grifT);
+                    sortedEvt->header.numHPGeHits++;
+                  }
                 }
-                if(dupFound == 0){
-                  //hit is not a duplicate, so store it
-                  //printf("passed hit: %u, core: %u, energy: %0.3f, suppress: %i, ts: %li, cfd: %i, time: %0.2f ns\n",sortedEvt->header.numHPGeHits,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].core,sortedEvt->hpgeHit[sortedEvt->header.numHPGeHits].energy,ptr->suppress,ptr->ts,ptr->cfd,grifT);
-                  sortedEvt->header.numHPGeHits++;
-                }
+                
               }
             }else{
               fprintf(stderr,"WARNING: unknown GRIFFIN crystal %i\n",c1);
@@ -500,6 +522,7 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
     for(uint8_t j = 0; j<sortedEvt->header.numHPGeHits;j++){
       fwrite(&sortedEvt->hpgeHit[j].timeOffsetNs,sizeof(float),1,out);
       fwrite(&sortedEvt->hpgeHit[j].energy,sizeof(float),1,out);
+      fwrite(&sortedEvt->hpgeHit[j].tsDiff,sizeof(uint8_t),1,out);
       fwrite(&sortedEvt->hpgeHit[j].core,sizeof(uint8_t),1,out);
       //fprintf(stdout,"Hit %u - core: %u, energy: %0.2f, time offset: %0.2f, win: %i, frag: %i\n",j,sortedEvt->hpgeHit[j].core,(double)sortedEvt->hpgeHit[j].energy,(double)sortedEvt->hpgeHit[j].timeOffsetNs,win_idx,frag_idx);
     }

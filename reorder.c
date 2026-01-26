@@ -59,6 +59,7 @@ struct reorderbuf_struct {
    int event[REORDER_MAXEVENTSIZE];
 };
 Tsbuf  reorder_buffer[REORDER_EVENTS]; // ~100bytes ea -> 100Mbytes
+int guard_var;
 volatile Tsbuf *tslot[REORDER_TSLOTS];
 int reorder_bufpos; // next slot to be written
 
@@ -73,7 +74,7 @@ void reorder_main(Sort_status *arg)
    unsigned int usecs=1000, *evptr, *evstart, *bufend;
    volatile Tsbuf *bufptr, *nxtptr, *newptr;
    unsigned long ts=0, tslo=0;
-
+   ++guard_var;
    memset(err,           0, REORDER_ERRTYPES*sizeof(int));
    //for(i=0; i<MAX_GRIFC; i++){ reorder_init[i] = INIT_WAIT; }
    printf("starting reorder input ...\n");
@@ -196,6 +197,7 @@ void reorder_main(Sort_status *arg)
    }
    arg->reorder_in_done = 1;
    printf("Reorder: end input thread\n");
+   printf("Reorder: end input thread [%d]\n", guard_var);
    return;
 }
 

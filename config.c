@@ -1297,7 +1297,7 @@ char *subrun_filename(Sort_status *sort, int subrun)
 
    sprintf(tmp,"%d", sort->run); digits = strlen(tmp);
    len = strlen(name);
-   while( digits++ < sort->run_digits ){ name[len] = '0'; name[1+len++] = 0; }
+   while( digits++ < sort->run_digits ){ name[len] = '0'; name[++len] = 0; }
    sprintf(name+strlen(name),"%d_", sort->run);
 
    sprintf(tmp,"%d", subrun);  digits = strlen(tmp);

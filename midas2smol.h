@@ -61,7 +61,7 @@ extern Sort_status *get_sort_status();
 
 //////////////////////////// diagnostics ////////////////////////////////
 
-#define REORDER_ERRTYPES 9
+#define REORDER_ERRTYPES 10
 #define ERR_FORMAT_IN 0
 #define ERR_WORDS_IN  1
 #define ERR_INIT_IN   2

@@ -29,14 +29,11 @@ long tsevents_out;
 extern Sort_metrics diagnostics;
 void reorder_status(int current_time)
 {
-   unsigned long sum; 
-   int *err = diagnostics.reorder_error;
-   sum = err[0] + err[2] + err[3] + err[ERR_LATE_IN] + err[5] + err[ERR_LATE_OUT] + err[7];// err[8] is in addition to other
-                                                                      // errors - do not add to total
-   printf("Reorder: in:%10ld out:%10ld err:%10ld[%5.1f%%] [Desync:%d]\n         ",
-          tsevents_in, tsevents_out, sum, (double)((100.0*sum)/tsevents_in), err[8] );
-   printf("[init:%d format:%d length:%d early:%d late:%d,%d, unk:%d]\n",
-          err[2], err[0], err[3], err[5], err[ERR_LATE_IN], err[ERR_LATE_OUT], err[7] );
+   int sum, *err = diagnostics.reorder_error;
+   int evt_in = reorder_events_read - err[EVT_SCALAR_IN];
+   sum = err[ERR_FORMAT_IN] + err[ERR_INIT_IN] + err[ERR_LENGTH_IN] + err[ERR_LATE_IN] + err[ERR_EARLY_IN] + err[ERR_LATE_OUT] + err[ERR_UNKNOWN_ORDER_IN];// err[8] is in addition to other
+   printf("Reorder: in:%10ld out:%10ld Scalar:%10ld[%5.1f%%] err:%10d[%5.1f%%] [Desync:%d]\n         ", tsevents_in, tsevents_out, err[EVT_SCALAR_IN], (100.0*err[EVT_SCALAR_IN])/reorder_events_read, sum, (100.0*sum)/reorder_events_read, err[8] );
+   printf("Err:[init:%d format:%d length:%d early:%d late:%d,%d, unk:%d]\n", err[ERR_INIT_IN], err[ERR_FORMAT_IN], err[ERR_LENGTH_IN], err[ERR_EARLY_IN], err[ERR_LATE_IN], err[ERR_LATE_OUT], err[ERR_UNKNOWN_ORDER_IN] );
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -70,7 +67,7 @@ pthread_mutex_t nxtlock;
 void reorder_main(Sort_status *arg)
 {
    int ev_done, ts_slot, len, *err = diagnostics.reorder_error;
-   int i,  grifc=0,  type,  rd_avail,  ts_stat,  err_format;
+   int i,  grifc=0,  type,  dtype, rd_avail,  ts_stat, scalar, err_format;
    unsigned int usecs=1000, *evptr, *evstart, *bufend;
    volatile Tsbuf *bufptr, *nxtptr, *newptr;
    unsigned long ts=0, tslo=0;
@@ -95,11 +92,11 @@ void reorder_main(Sort_status *arg)
       type = (((*evptr) >> 28) & 0xf);
       if( evstart == NULL && type != 0x8 ){ err_format=1; }
       switch(type){
-         case 0x8:
+         case 0x8: dtype = (*evptr) & 0xf;
             if( evstart != NULL ){ err_format=1; } else { evstart=evptr; }
-            grifc = ((*evptr) >> 16) & 0xF;  break;
          case 0xE:
-            if( ts_stat != 2 ){ err_format=1; } ev_done = 1; break;
+            if( dtype == 0xf && ts_stat == 1 && err_format == 0 ){ scalar = 1; }
+            else if( ts_stat != 2 ){ err_format=1; } ev_done = 1; break;
          case 0xA:
             if( ts_stat != 0 ){ err_format=1; }
             tslo = *evptr & 0xFFFFFFF; ts_stat = 1; break;
@@ -114,40 +111,51 @@ void reorder_main(Sort_status *arg)
       if( !ev_done ){ continue; }
       ++reorder_events_read;
       // now have full event
+      if( scalar ){
+         ++err[EVT_SCALAR_IN]; evstart = NULL;
+         scalar = err_format = len = ev_done = ts_stat = 0; continue;
+      }
       if( err_format ){
-         ++err[ERR_FORMAT_IN]; err[ERR_WORDS_IN] += len;
-         evstart = NULL; err_format = len = ev_done = ts_stat = 0; continue;
+         //printf("FRMT[l=%2d][%d-%d]\n", len, tsevents_out, reorder_events_read);
+         ++err[ERR_FORMAT_IN]; err[ERR_WORDS_IN] += len; evstart = NULL;
+         scalar = err_format = len = ev_done = ts_stat = 0; continue;
       }
       if( len > REORDER_MAXEVENTSIZE ){
-         ++err[ERR_LENGTH_IN]; err[ERR_WORDS_IN] += len;
-         evstart = NULL; err_format = len = ev_done = ts_stat = 0; continue;
+         //printf("LEN_[l=%2d][%d-%d]\n", len, tsevents_out, reorder_events_read);
+         ++err[ERR_LENGTH_IN]; err[ERR_WORDS_IN] += len; evstart = NULL;
+         scalar = err_format = len = ev_done = ts_stat = 0; continue;
       }
       // often, at start of run, get junk data from prev run(large timestamps)
       // try and discard this (timestamps larger than 2.6 seconds)
       if( reorder_init[grifc] != 0 ){
-         ++err[ERR_INIT_IN]; err[ERR_WORDS_IN] += len;
-         if( (ts>>28) == 0 ){ reorder_init[grifc] = 0; }
-         else             { --reorder_init[grifc]; }
-         evstart = NULL; err_format = len = ev_done = ts_stat = 0; continue;
+         if( (ts>>28) != 0 ){
+            ++err[ERR_INIT_IN]; err[ERR_WORDS_IN] += len; evstart = NULL;
+            scalar = err_format = len = ev_done = ts_stat = 0; continue;
+         }
+         reorder_init[grifc] = 0;
       }
       // now have full event without any obvious format errors
       
       // events that are so late, that we have already output their timeslot
       // can no longer be made to be in order
       // - drop them for now (may include anyway - mark as just for singles?)
-      if( ts <= output_ts ){
-         ++err[ERR_LATE_IN]; err[ERR_WORDS_IN] += len;
-         evstart = NULL; err_format = len = ev_done = ts_stat = 0; continue;
+      if( ts < output_ts ){
+         //printf("LATE[l=%2d][%d-%d]\n", len, tsevents_out, reorder_events_read);
+         ++err[ERR_LATE_IN]; err[ERR_WORDS_IN] += len; evstart = NULL;
+         scalar = err_format = len = ev_done = ts_stat = 0; continue;
       }
       // events that are Extremely early (firmware bugs/data corruption)
       // these would stop reuse of their and subsequent buffer slots until
       // their timeslot comes (reuse would be expected ~64k events later)
       //   i.e. buffer would become blocked for a long time
       //   discard for now, until implement a way of avoiding blocked buf
-      if( ts > (output_ts + TOO_EARLY_CUTOFF) ){
-         ++err[ERR_EARLY_IN]; err[ERR_WORDS_IN] += len;
-         evstart = NULL; err_format = len = ev_done = ts_stat = 0; continue;
+      // UPDATE: new method avoids blocked buf
+      if( 0 && ts > (output_ts + TOO_EARLY_CUTOFF) ){
+         //printf("ERLY[l=%2d][%d-%d]\n", len, tsevents_out, reorder_events_read);
+         ++err[ERR_EARLY_IN]; err[ERR_WORDS_IN] += len; evstart = NULL;
+         scalar = err_format = len = ev_done = ts_stat = 0; continue;
       }
+      //printf("GOOD[l=%2d][%d-%d]\n", len, tsevents_out, reorder_events_read);
       bufptr = NULL;  ts_slot = (ts >> BUCKET_SIZE_BITS) % REORDER_TSLOTS;
       // check if next buffer slot is available to store this event
       // LOOP over buffer (starting at next)
@@ -193,7 +201,7 @@ void reorder_main(Sort_status *arg)
          }
       }
       pthread_mutex_unlock(&nxtlock);  ++tsevents_in;
-      evstart = NULL;  len = ev_done = ts_stat = 0; err_format=0;
+      evstart = NULL; scalar = len = ev_done = ts_stat = err_format = 0;
    }
    arg->reorder_in_done = 1;
    printf("Reorder: end input thread\n");

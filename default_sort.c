@@ -116,8 +116,12 @@ int GetIDfromAddress(unsigned short addr){ // address must be an unsigned short
 
 
 //#######################################################################
-//######## PRESORT(gain corrections, addback, suppression)     ##########
+//######## PRESORT(gain corrections, suppression)              ##########
 //#######################################################################
+
+// We don't do addback here, instead passing through all single crystal hits
+// to the output file. Addback can be implemented when sorting the output
+// file(s).
 
 // (used to be called apply_gains) this is the first function to be called
 // on processing an event - before any singles/coinc-sorting ...
@@ -215,11 +219,14 @@ int pre_sort_exit(int frag_idx, int end_idx)
         perform_pileup_correction(ptr, alt, dt, chan, chan2, i, end_idx);
       }
 
+      /*if(alt->subsys == SUBSYS_BGO){
+        printf("crystals: [%i %i], dt: %i\n",crystal_table[ptr->chan],crystal_table[alt->chan],dt);
+      }*/
+
       // BGO suppression of HPGe
       if( (dt >= bgo_window_min && dt <= bgo_window_max) && alt->subsys == SUBSYS_BGO && !ptr->suppress ){
-        // could alternatively use crystal numbers rather than clover#
-        //    (don't currently have this for BGO)
-        if( crystal_table[ptr->chan]/16 == crystal_table[alt->chan]/16 ){ ptr->suppress = 1; }
+        if( crystal_table[ptr->chan]/16 == crystal_table[alt->chan]/16 ){ ptr->suppress = 1; } //per-clover suppression
+        //if( crystal_table[ptr->chan] == crystal_table[alt->chan] ){ ptr->suppress = 1; } //per-crystal suppression
       }
       /*// Germanium addback -
       //    earliest fragment has the sum energy, others are marked -1
@@ -776,6 +783,8 @@ int gen_derived_odb_tables()
          } break;
       default: break;
       }
+
+      //printf("Channel %i name: %s - element: %i - crystal: %i\n",i,chan_name[i],element_table[i],crystal_table[i]); //debug
 
       // set full subsystem id (including polarity/output-type etc)
       switch(subsys){

@@ -26,7 +26,8 @@ uint64_t psd_vals[MAX_PSD_VALS];
 int main(int argc, char *argv[])
 {
    if(argc < 3){
-      fprintf(stdout,"  midas2smol midas_file output_SMOL_tree config_json\n\n");
+      fprintf(stdout,"  midas2smol midas_file output_SMOL_file config_json\n\n");
+      fprintf(stdout,"    Sorts MIDAS files into the SMOL event list format.\n\n");
       fprintf(stdout,"    MIDAS files are expected to be named using the standard run\n");
       fprintf(stdout,"    and subrun numbering scheme (eg. run29623_000.mid).\n");
       fprintf(stdout,"    Provide the path of the first subrun, and all available\n");

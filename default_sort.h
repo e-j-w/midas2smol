@@ -41,8 +41,8 @@
 //BGO window
 //300 ns (ie. 30 samples) is the GRSISort default (see https://github.com/GRIFFINCollaboration/GRSISort/blob/baf84f5947ec6a80035b01d38696b6e5d1ae2dcc/include/TAnalysisOptions.h#L70)
 static int bgo_window_min = 0;
-static int bgo_window_max = 30;
-//static int bgo_window_max = 100;
+//static int bgo_window_max = 30;
+static int bgo_window_max = 100;
 
 // HPGe pileup
 #define N_PU_CLASSES 15

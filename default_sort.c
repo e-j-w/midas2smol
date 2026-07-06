@@ -568,14 +568,15 @@ uint8_t fill_smol_entry(FILE *out, const int win_idx, const int frag_idx)
 #define ODBHANDLE_DSG  13
 #define ODBHANDLE_DAL  14
 #define ODBHANDLE_DAT  15
+#define ODBHANDLE_QED  16
 #define ODBHANDLE_UNK  23
 static char odb_handle[MAX_ODB_SUBSYS][8] = {
-   "GRG", "GRS", "SEP", "PAC",  //  0- 3
-   "LBS", "LBT", "LBL", "DSC",  //  4- 7
-   "ART", "ZDS", "RCS", "XXX",  //  8-11
-   "DSW", "DSG", "DAL", "DAT",  //  12-15
-   "",    "",    "",    "",
-   "",    "",    "",    "UNK"
+  "GRG", "GRS", "SEP", "PAC",  //  0- 3
+  "LBS", "LBT", "LBL", "DSC",  //  4- 7
+  "ART", "ZDS", "RCS", "XXX",  //  8-11
+  "DSW", "DSG", "DAL", "DAT",  //  12-15
+  "QED",    "",    "",    "",
+  "",    "",    "",    "UNK"
 };
 
 static char   path[256];

@@ -37,17 +37,24 @@
 
 typedef struct
 {
-	uint8_t numHPGeHits; //number of HPGe array hits
-	uint8_t metadata; //bit 0: TIGRESS (on) or GRIFFIN (off), bit 1: any suppressor fired, bit 7: always set, for data validation
-	double evtTimeNs; //time of the first hit, in ns - float doesn't have enough precision
+	uint8_t numHPGeHits; // number of HPGe array hits
+	uint8_t metadata; // bit 0: TIGRESS (on) or GRIFFIN (off)
+	                  // bit 1: any suppressor fired
+										// bit 7: always set, for data validation
+	double evtTimeNs; // time of the first hit, in ns - float 
+	                  // doesn't have enough precision
 }evt_header;
 
 typedef struct
 {
-	float timeOffsetNs; //CFD time relative to tsTimeNs, CFD time if the CFD fail flag is not set, otherwise timestamp-derived time
-	float energy; //calibrated energy in keV
-	uint8_t tsDiff; //number of leading edge timestamps that this hit differs from the first hit in the event (=255 if difference is >= 255)
-	uint8_t core; //bits 0-5: HPGe crystal, 0-indexed; bit 6: CFD fail flag (|ts time - CFD time| > 300 ns), bit 7: pileup flag (in case we want to discard pileup later)
+	float timeOffsetNs; // CFD time relative to tsTimeNs, CFD time if the 
+	                    // CFD fail flag is not set, otherwise timestamp-derived time
+	float energy; // calibrated energy in keV
+	uint8_t tsDiff; // number of leading edge timestamps that this hit differs
+	                // from the first hit in the event (=255 if difference is >= 255)
+	uint8_t core; // bits 0-5: HPGe crystal, 0-indexed 
+	              // bit 6: CFD fail flag (|ts time - CFD time| > 300 ns) 
+								// bit 7: pileup flag (in case we want to discard pileup later)
 }hpge_hit;
 
 //struct to hold an event resident in memory,

@@ -179,15 +179,16 @@ int write_config(Config *cfg, FILE *fp)
 static char config_data[1024*1024];
 int load_config(Config *cfg, const char *filename, char *buffer)
 {
-   int i, len, value, val2, val3, val4, val5, val6, address, type, instring;
-   char *ptr, *name, *valstr, op[8], tmp[80];
-   float gain, offset, quad;
-   float puk1[7], puk2[7], puE1[7];
-   float ct0[16], ct1[16], ct2[16];
-   // Initialize values to defaults
-   // Values of -1 are ignored by edit_calibration - use this for all channels that are not HPGe to avoid bloating the size of the config
-   float puk_reset[7]={1,0,0,0,0,0,0}, puE1_reset[7]={0,0,0,0,0,0,0}, pu_ignore[7]={-1,-1,-1,-1,-1,-1,-1};
-   FILE *fp;
+   int i,j, len, value, val2, val3, val4, val5, val6, address, type, instring;
+  char *ptr, *name, *valstr, *title, *path, *var, *var2, op[8], tmp[80];
+  float gain, offset, quad;
+  float puk1[7], puk2[7], puE1[7];
+  float ct0[16], ct1[16], ct2[16];
+  // Initialize values to defaults
+  // Values of -1 are ignored by edit_calibration - use this for all channels that are not HPGe to avoid bloating the size of the config
+  float puk_reset[7]={1,0,0,0,0,0,0}, puE1_reset[7]={0,0,0,0,0,0,0}, pu_ignore[7]={-1,-1,-1,-1,-1,-1,-1};
+  float ct_reset[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, ct_ignore[16]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+  FILE *fp;
 
    if( filename != NULL ){ len = strlen(filename);
       if( (fp=fopen(filename,"r")) == NULL ){
@@ -443,7 +444,7 @@ int load_config(Config *cfg, const char *filename, char *buffer)
       return(-1);
    } ptr += 17;
    while( 1 ){ // Calibrations
-      if( strncmp(ptr,"]},", 3) == 0 ){ ptr+=3; fprintf(stdout,"Calibrations section empty so breaking here.\n"); break; }// empty section
+      if( strncmp(ptr,"]},", 3) == 0 ){ ptr+=3; break; }// empty section or end of section
       if( strncmp(ptr,"{\"name\":\"", 9) != 0 ){
          fprintf(stderr,"load_config: errS byte %ld\n", ptr-config_data);
          return(-1);

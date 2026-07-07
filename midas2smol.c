@@ -40,10 +40,16 @@ int main(int argc, char *argv[])
    srand(28719747); //seed random number generator (use fixed seed so that results are consistent between sorts)
    Sort_status *sort = &sort_status;
    Config *cfg;
+   if( (sort->cal_src = malloc(10)) == NULL ){
+      fprintf(stderr,"can't alloc string for cal_src");
+      return(-1);
+   }
    if(argc >= 4){
       init_config(argv[3]);
+      sprintf(sort->cal_src,"config");
    }else{
       init_config(DEFAULT_CONFIG);
+      sprintf(sort->cal_src,"midas");
    }
    copy_config(configs[0], configs[1]); // copy config0 to cfg1 for sorting
    cfg = configs[1];

@@ -1,25 +1,25 @@
 #ifndef SMOLFMT_H
 #define SMOLFMT_H
 
-// structs defining the SMOL tree format used by Jonathan for sorting data,
+// structs defining the SMOL event list format used by Jonathan for sorting data,
 // which can then be processed by external sort codes
 
 // This format is optimized for the smallest possible filesize, as disk read is the
 // typical bottleneck when sorting (after ROOT, which is always the biggest 
 // bottleneck, and which my entire sorting pipeline has been designed to avoid).
 
-// SMOL tree files consist of evt_header structs written to disk, followed
+// SMOL event list files consist of evt_header structs written to disk, followed
 // by N hpge_hit structs, where N=evt_header->numHPGeHits. Each hpge_hit in an event is
 // written sequentially to disk.
 
-// At the start of the SMOL tree file (before any of the event data), there is a single 
+// At the start of the SMOL event list file (before any of the event data), there is a single 
 // uint64_t header value, formatted as follows:
 //   - Bits 0 - 48: total number of events in the file
 //     - Hopefully we never need more than 2.8E14 events per file.
-//   - Bits 49 - 63: SMOL tree type
+//   - Bits 49 - 63: SMOL event list type
 //     - Describes the header and event format for SMOL files. This allows the file 
 //       specfication to be expanded to include different 
-//       sorted_evt formats, so that different experiment types can have optimized tree 
+//       sorted_evt formats, so that different experiment types can have optimized event list 
 //       formats only containing the info relevant for that experiment (so that eg. 
 //       ancillary detector metadata isn't saved for experiments that only use GRIFFIN).
 //     - Values can be:

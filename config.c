@@ -1,87 +1,3 @@
-// 0) make sure user sort runs
-//
-// 1) reset bytes sorted
-//     ** Runs are entries in filelist[+may contain multiple subruns] **
-//     so handle subruns differently
-//     status - subrun is x/y or 1/1 ****
-//
-// DONE 2) strings replaced with %20 - globals etc
-//
-// 3) getHistofileList - Histogram files need run title info [+date/time]
-//                     [Already have odbstuff in config file]
-//    ALSO remember first and last midas-timestamps
-//      add config section: SortedFileDetails
-//
-// DONE 4) Add radware matrix script [optionally all histos]
-//
-// 5) Add 180-deg-coinc matrix - for summing calcns
-//       56Co - 4400keV   1keV/chan
-//
-//    Add 2-photon decay 1dhisto of sum of pairs of crystals [2photonGe]
-//       Add 2-photon Variable as well
-//
-// *** 6) sort gzipped files
-//
-// DONE 7) check root script with config file entry
-//
-// DONE 8) Reorder histo list - Energy Time Waveform Pulsehight
-//
-// DONE 9) Fix Gains from config not midas
-//
-// odb-error
-//
-// Sr90[]
-//
-/////////////////////////////////////////////////////////////////////////////
-
-/* new js fn similar to odbget - will have to decode args in server.c */
-/* Test commands ...
-
-wget 'http://grifstore1:9093/?cmd=addDatafile&filename=/tig/grifstore1b/grifalt/schedule145/Dec2023/run21834_000.mid'
-
-wget 'http://grifstore1:9093/?cmd=getDatafileList&dir=/tig/grifstore1b/grifalt/schedule145/Dec2023'
-
-wget 'http://localhost:9093/?cmd=getDatafileList&dir=.'
-wget 'http://localhost:9093/?cmd=getHistofileList&dir=.'
-wget 'http://localhost:9093/?cmd=getSortStatus'
-wget 'http://localhost:9093/?cmd=addDatafile&filename=/tig/grifstore1b/grifalt/schedule145/Dec2023/run21834_000.mid'
-wget 'http://localhost:9093/?cmd=openHistofile&filename=histos.tar'
-
-
-wget 'http://localhost:9093/?cmd=addGate&filename=histos.cfg'
-wget 'http://localhost:9093/?cmd=saveConfig&filename=histos.cfg'
-
-
-
-wget 'http://panther:9093/?cmd=addDatafile&filename=/tig/grifstore0b/griffin/schedule140/Calibrations-July2021/run18909_020.mid'
-
-wget 'http://panther:9093/?cmd=endCurrentFile'
-
-wget 'http://panther:9093/?cmd=getSpectrumList&filename=run18909_020.tar'
-
-wget 'http://panther:9093/?cmd=callspechandler&spectum0=Hitpattern_Energy&spectrum1=GRG01BN00A_Energy'
-
-*/
-//////////////////////////////////////////////////////////////////////////////
-//"spectrum1d/index.html"
-/*    check for javascript cmds or send file               */
-/*    file should be under custom pages - check url for .. */
-// Format of CALLSPECHANDLER call is:
-// host:PORT/?cmd=callSpectrumHandler&spectum0=firstSpec&spectrum1=secondSpec
-// CURRENTLY DEFINED COMMANDS ...
-//     /?cmd=getDatafileList&dir=XXXX
-//     /?cmd=getHistofileList
-//     /?cmd=getSortStatus
-//     /?cmd=getSpectrumList
-//     /?cmd=callSpectrumHandler
-//     /?cmd=addDatafile&filename=XXXX
-//
-// ALSO FIXED URLs ...
-//     /filter-status.html
-//     /report
-//     /*.css
-//     /*.js
-//
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,12 +8,6 @@ wget 'http://panther:9093/?cmd=callspechandler&spectum0=Hitpattern_Energy&spectr
 #include <ctype.h>
 #include "config.h"
 #include "midas2smol.h"
-
-///////////////////////////////////////////////////////////////////////////
-//////////////         Url  Command  interpreter          /////////////////
-///////////////////////////////////////////////////////////////////////////
-
-extern int coinc_events_cutoff;
 
 ///////////////////////////////////////////////////////////////////////////
 /////////////////            Config  I/O            ///////////////////////
@@ -671,6 +581,7 @@ int clear_calibrations(Config *cfg)
   for(i=0; i<cfg->ncal;     i++){
     edit_calibration(cfg, cfg->calib[i]->name, offset, gain, quad, puk1, puk2, puE1, address, datatype, 1);
   }
+  fprintf(stdout,"Cleared all calibrations.\n");
   return(0);
 }
 
@@ -923,83 +834,6 @@ int set_calibration(Config *cfg, int num, char url_args[][STRING_LEN], int fd)
 //      }
       edit_calibration(cfg, url_args[i+1], offset, gain, quad, puk1, puk2, puE1,
                        address, datatype, 1);
-   }
-   return(0);
-}
-
-int set_pileup_correction(Config *cfg, int num, char url_args[][STRING_LEN], int fd)
-{
-   float offset=-1, gain=-1, quad=-1;
-   float puk1[7], puk2[7], puE1[7];
-   int i, address=-1, datatype=-1;
-   char tmp[128];
-
-// Initialize values to defaults
-for(i=0; i<7; i++){
-  puk1[i] = puk2[i] = puE1[i] = 0;
-}
-puk1[0] = puk2[0] = 1; // set default factor as 1 not zero
-
-   for(i=2; i<num; i+=8){
-      if( strncmp(url_args[i], "channelName", 10) != 0 ){
-         sprintf(tmp,"set_pileup_correction: expected \"channelName\" at %s\n",url_args[i]);
-         
-         fprintf(stderr,"expected \"channelName\" at %s\n", url_args[i]);
-         return(-1);
-      }
-      if( strncmp(url_args[i+2], "pileupk1", 8) != 0 ){
-         sprintf(tmp,"set_pileup_correction: expected \"pileupk1\" at %s\n",url_args[i+2]);
-         
-         fprintf(stderr,"expected \"pileupk1\" at %s\n", url_args[i+2]);
-         return(-1);
-      }
-      if( sscanf(url_args[i+3], "%f,%f,%f,%f,%f,%f,%f", puk1,puk1+1,puk1+2,puk1+3,puk1+4,puk1+5,puk1+6) != 7 ){
-         sprintf(tmp,"set_pileup_correction: can't read pileup k1 value (expected 7 values), %s\n",url_args[i+3]);
-         
-         fprintf(stderr,"can't read pileup k1, expected 7 values: %s\n", url_args[i+3]);
-         return(-1);
-      }
-      if( strncmp(url_args[i+4], "pileupk2", 8) != 0 ){
-         sprintf(tmp,"set_pileup_correction: expected \"pileupk2\" at %s\n",url_args[i+4]);
-         
-         fprintf(stderr,"expected \"pileupk2\" at %s\n", url_args[i+4]);
-         return(-1);
-      }
-      if( sscanf(url_args[i+5], "%f,%f,%f,%f,%f,%f,%f", puk2,puk2+1,puk2+2,puk2+3,puk2+4,puk2+5,puk2+6) != 7 ){
-         sprintf(tmp,"set_pileup_correction: can't read pileup k2 value (expected 7 values), %s\n",url_args[i+5]);
-         
-         fprintf(stderr,"can't read pileup k2, expected 7 values: %s\n", url_args[i+5]);
-         return(-1);
-      }
-      if( strncmp(url_args[i+6], "pileupE1", 8) != 0 ){
-         sprintf(tmp,"set_pileup_correction: expected \"pileupE1\" at %s\n",url_args[i+6]);
-         
-         fprintf(stderr,"expected \"pileupE1\" at %s\n", url_args[i+6]);
-         return(-1);
-      }
-      if( sscanf(url_args[i+7], "%f,%f,%f,%f,%f,%f,%f", puE1,puE1+1,puE1+2,puE1+3,puE1+4,puE1+5,puE1+6) != 7 ){
-         sprintf(tmp,"set_pileup_correction: can't read pileup E1 value (expected 7 values), %s\n",url_args[i+7]);
-         
-         fprintf(stderr,"can't read pileup E1, expected 7 values: %s\n", url_args[i+7]);
-         return(-1);
-      }
-//      if( strncmp(url_args[i+14], "address", 4) != 0 ){
-//         fprintf(stderr,"expected \"address\" at %s\n", url_args[i+14]);
-//         return(-1);
-//      }
-//      if( sscanf(url_args[i+15], "%d", &address) < 1 ){
-//         fprintf(stderr,"can't read address: %s\n", url_args[i+15]);
-//         return(-1);
-//      }
-//      if( strncmp(url_args[i+16], "datatype", 6) != 0 ){
-//         fprintf(stderr,"expected \"datatype\" at %s\n", url_args[i+16]);
-//         return(-1);
-//      }
-//      if( sscanf(url_args[i+17], "%d", &datatype) < 1 ){
-//         fprintf(stderr,"can't read datatype: %s\n", url_args[i+17]);
-//         return(-1);
-//      }
-    edit_calibration(cfg, url_args[i+1], offset, gain, quad, puk1, puk2, puE1, address, datatype, 1);
    }
    return(0);
 }

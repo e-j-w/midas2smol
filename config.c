@@ -16,6 +16,7 @@ Config *configs[MAX_CONFIGS];
 
 int write_config(Config *cfg, FILE *fp)
 {
+
    Cal_coeff *calib;  Global *global;
    Sortvar *var;
    int i;
@@ -45,19 +46,24 @@ int write_config(Config *cfg, FILE *fp)
    for(i=0; i<cfg->ncal; i++){ calib = cfg->calib[i];
      fprintf(fp,"%9s{\"name\" : \"%s\" , \"address\" : %d , \"datatype\" : %d , \"offset\" : %f , \"gain\" : %f , \"quad\" : %e ", "", calib->name, calib->address, calib->datatype, calib->offset, calib->gain, calib->quad );
      if(strncmp(calib->name,"GRG",3)==0){
-       if(calib->pileupk1[0] != -1){
-         fprintf(fp,", \"pileupk1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk1[0],calib->pileupk1[1],calib->pileupk1[2],calib->pileupk1[3],calib->pileupk1[4],calib->pileupk1[5],calib->pileupk1[6]);
-         fprintf(fp,", \"pileupk2\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk2[0],calib->pileupk2[1],calib->pileupk2[2],calib->pileupk2[3],calib->pileupk2[4],calib->pileupk2[5],calib->pileupk2[6]);
-         fprintf(fp,", \"pileupE1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupE1[0],calib->pileupE1[1],calib->pileupE1[2],calib->pileupE1[3],calib->pileupE1[4],calib->pileupE1[5],calib->pileupE1[6]);
-       }else{
-         fprintf(fp,", \"pileupk1\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
-         fprintf(fp,", \"pileupk2\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
-         fprintf(fp,", \"pileupE1\" : [ %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0);
-       }
-      //skip crosstalk, unimplemented
-      fprintf(fp,", \"crosstalk0\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-      fprintf(fp,", \"crosstalk1\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-      fprintf(fp,", \"crosstalk2\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+         if(calib->pileupk1[0] != -1){
+            fprintf(fp,", \"pileupk1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk1[0],calib->pileupk1[1],calib->pileupk1[2],calib->pileupk1[3],calib->pileupk1[4],calib->pileupk1[5],calib->pileupk1[6]);
+            fprintf(fp,", \"pileupk2\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk2[0],calib->pileupk2[1],calib->pileupk2[2],calib->pileupk2[3],calib->pileupk2[4],calib->pileupk2[5],calib->pileupk2[6]);
+            fprintf(fp,", \"pileupE1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupE1[0],calib->pileupE1[1],calib->pileupE1[2],calib->pileupE1[3],calib->pileupE1[4],calib->pileupE1[5],calib->pileupE1[6]);
+         }else{
+            fprintf(fp,", \"pileupk1\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
+            fprintf(fp,", \"pileupk2\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
+            fprintf(fp,", \"pileupE1\" : [ %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0);
+         }
+         if(calib->crosstalk0[0] != -1){
+            fprintf(fp,", \"crosstalk0\" : [ %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ]",calib->crosstalk0[0],calib->crosstalk0[1],calib->crosstalk0[2],calib->crosstalk0[3],calib->crosstalk0[4],calib->crosstalk0[5],calib->crosstalk0[6],calib->crosstalk0[7],calib->crosstalk0[8],calib->crosstalk0[9],calib->crosstalk0[10],calib->crosstalk0[11],calib->crosstalk0[12],calib->crosstalk0[13],calib->crosstalk0[14],calib->crosstalk0[15]);
+            fprintf(fp,", \"crosstalk1\" : [ %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ]",calib->crosstalk1[0],calib->crosstalk1[1],calib->crosstalk1[2],calib->crosstalk1[3],calib->crosstalk1[4],calib->crosstalk1[5],calib->crosstalk1[6],calib->crosstalk1[7],calib->crosstalk1[8],calib->crosstalk1[9],calib->crosstalk1[10],calib->crosstalk1[11],calib->crosstalk1[12],calib->crosstalk1[13],calib->crosstalk1[14],calib->crosstalk1[15]);
+            fprintf(fp,", \"crosstalk2\" : [ %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ]",calib->crosstalk2[0],calib->crosstalk2[1],calib->crosstalk2[2],calib->crosstalk2[3],calib->crosstalk2[4],calib->crosstalk2[5],calib->crosstalk2[6],calib->crosstalk2[7],calib->crosstalk2[8],calib->crosstalk2[9],calib->crosstalk2[10],calib->crosstalk2[11],calib->crosstalk2[12],calib->crosstalk2[13],calib->crosstalk2[14],calib->crosstalk2[15]);
+         }else{
+            fprintf(fp,", \"crosstalk0\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+            fprintf(fp,", \"crosstalk1\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+            fprintf(fp,", \"crosstalk2\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+         }
      }
       fprintf(fp, "%s", ( i<cfg->ncal-1 ) ? "},\n" : "}\n" );
    }
@@ -472,7 +478,7 @@ int load_config(Config *cfg, const char *filename, char *buffer)
         while(*ptr!=']'){++ptr;}
         ptr+=2;
       }
-      cfg->lock=1; edit_calibration(cfg,name,offset,gain,quad,puk1,puk2,puE1,address,type,1); cfg->lock=0;
+      cfg->lock=1; edit_calibration(cfg,name,offset,gain,quad,puk1,puk2,puE1,ct0,ct1,ct2,address,type,1); cfg->lock=0;
       if( *ptr++ == ',' ){ continue; } // have skipped ']' if not
       ptr+=2; break; // skip '},'
     }
@@ -568,18 +574,19 @@ int clear_config(Config *cfg)
 int clear_calibrations(Config *cfg)
 {
   float offset=0, gain=1, quad=0;
-  float puk1[7], puk2[7], puE1[7];
   int i, address=-1, datatype=-1;
-
   // Initialize values to defaults
-  for(i=0; i<7; i++){
-    puk1[i] = puk2[i] = puE1[i] = 0;
-  }
-  puk1[0] = puk2[0] = 1; // set default factor as 1 not zero
+  // Values of -1 are ignored by edit_calibration - use this for all channels that are not HPGe to avoid bloating the size of the config
+  float puk_reset[7]={1,0,0,0,0,0,0}, puE1_reset[7]={0,0,0,0,0,0,0}, pu_ignore[7]={-1,-1,-1,-1,-1,-1,-1};
+  float ct_reset[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, ct_ignore[16]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 
   // delete any calibration values
   for(i=0; i<cfg->ncal;     i++){
-    edit_calibration(cfg, cfg->calib[i]->name, offset, gain, quad, puk1, puk2, puE1, address, datatype, 1);
+    if(strncmp(cfg->calib[i]->name,"GRG",3)==0){
+      edit_calibration(cfg, cfg->calib[i]->name, offset, gain, quad, puk_reset, puk_reset, puE1_reset, ct_reset, ct_reset, ct_reset, address, datatype, 1);
+    }else{
+      edit_calibration(cfg, cfg->calib[i]->name, offset, gain, quad, pu_ignore, pu_ignore, pu_ignore, ct_ignore, ct_ignore, ct_ignore, address, datatype, 1);
+    }
   }
   fprintf(stdout,"Cleared all calibrations.\n");
   return(0);
@@ -721,7 +728,7 @@ int save_config(Config *cfg, const char *filename, int overwrite)
       fprintf(stderr,"save_config: cant open %s to write\n", filename);
       return(-1);
    }
-   //printf("Writing configuration to file: %s\n",filename);
+   fprintf(stdout,"Writing configuration to file: %s\n",filename);
    write_config(cfg, fp);
    fclose(fp);
    return(0);
@@ -761,84 +768,7 @@ Sortvar *find_sortvar(Config *cfg, char *name)
 
 /////////////////////////////   CALIBRATION   /////////////////////////////
 
-int set_calibration(Config *cfg, int num, char url_args[][STRING_LEN], int fd)
-{
-   float offset, gain, quad;
-   float puk1[7], puk2[7], puE1[7];
-   int i, address=-1, datatype=-1;
-   char tmp[128];
-
-   // Initialize values to -1
-   for(i=0; i<7; i++){
-     puk1[i] = puk2[i] = puE1[i] = -1;
-   }
-
-   for(i=2; i<num; i+=8){
-      if( strncmp(url_args[i], "channelName", 10) != 0 ){
-         sprintf(tmp,"set_calibration: expected \"channelName\" at %s\n",url_args[i]);
-         
-         fprintf(stderr,"expected \"channelName\" at %s\n", url_args[i]);
-         return(-1);
-      }
-      if( strncmp(url_args[i+2], "quad", 4) != 0 ){
-         sprintf(tmp,"set_calibration: expected \"quad\" at %s\n",url_args[i+2]);
-         
-         fprintf(stderr,"expected \"quad\" at %s\n", url_args[i+2]);
-         return(-1);
-      }
-      if( sscanf(url_args[i+3], "%f", &quad) < 1 ){
-         sprintf(tmp,"set_calibration: can't read quad value, %s\n",url_args[i+3]);
-         
-         fprintf(stderr,"can't read quad: %s\n", url_args[i+3]);
-         return(-1);
-      }
-      if( strncmp(url_args[i+4], "gain", 4) != 0 ){
-         sprintf(tmp,"set_calibration: expected \"gain\" at %s\n",url_args[i+4]);
-         
-         fprintf(stderr,"expected \"gain\" at %s\n", url_args[i+4]);
-         return(-1);
-      }
-      if( sscanf(url_args[i+5], "%f", &gain) < 1 ){
-         sprintf(tmp,"set_calibration: can't read gain value, %s\n",url_args[i+5]);
-         
-         fprintf(stderr,"can't read gain: %s\n", url_args[i+5]);
-         return(-1);
-      }
-      if( strncmp(url_args[i+6], "offset", 6) != 0 ){
-         sprintf(tmp,"set_calibration: expected \"offset\" at %s\n",url_args[i+6]);
-         
-         fprintf(stderr,"expected \"offset\" at %s\n", url_args[i+6]);
-         return(-1);
-      }
-      if( sscanf(url_args[i+7], "%f", &offset) < 1 ){
-         sprintf(tmp,"set_calibration: can't read offset value, %s\n",url_args[i+7]);
-         
-         fprintf(stderr,"can't read offset: %s\n", url_args[i+7]);
-         return(-1);
-      }
-//      if( strncmp(url_args[i+8], "address", 4) != 0 ){
-//         fprintf(stderr,"expected \"address\" at %s\n", url_args[i+8]);
-//         return(-1);
-//      }
-//      if( sscanf(url_args[i+9], "%d", &address) < 1 ){
-//         fprintf(stderr,"can't read address: %s\n", url_args[i+9]);
-//         return(-1);
-//      }
-//      if( strncmp(url_args[i+10], "datatype", 6) != 0 ){
-//         fprintf(stderr,"expected \"datatype\" at %s\n", url_args[i+10]);
-//         return(-1);
-//      }
-//      if( sscanf(url_args[i+11], "%d", &datatype) < 1 ){
-//         fprintf(stderr,"can't read datatype: %s\n", url_args[i+11]);
-//         return(-1);
-//      }
-      edit_calibration(cfg, url_args[i+1], offset, gain, quad, puk1, puk2, puE1,
-                       address, datatype, 1);
-   }
-   return(0);
-}
-
-int edit_calibration(Config *cfg, char *name, float offset, float gain, float quad, float puk1[7], float puk2[7], float puE1[7], int address, int type, int overwrite)
+int edit_calibration(Config *cfg, char *name, float offset, float gain, float quad, float puk1[7], float puk2[7], float puE1[7], float ct0[16], float ct1[16], float ct2[16], int address, int type, int overwrite)
 {
    time_t current_time = time(NULL);
    int i,j, len;
@@ -850,12 +780,15 @@ int edit_calibration(Config *cfg, char *name, float offset, float gain, float qu
    }
    if( i < cfg->ncal ){ // calib already exists
       if( overwrite ){
-      if( offset != -1 ){ cal->offset = offset; }
-      if( gain   != -1 ){ cal->gain = gain; }
-      if( quad   != -1 ){ cal->quad = quad; }
-      if( puk1[0] != -1 ){ for(j=0; j<7; j++){cal->pileupk1[j] = puk1[j];} }
-      if( puk2[0] != -1 ){ for(j=0; j<7; j++){cal->pileupk2[j] = puk2[j];} }
-      if( puE1[0] != -1 ){ for(j=0; j<7; j++){cal->pileupE1[j] = puE1[j];} }
+         if( offset != -1 ){ cal->offset = offset; }
+         if( gain   != -1 ){ cal->gain = gain; }
+         if( quad   != -1 ){ cal->quad = quad; }
+         if( puk1[0] != -1 ){ for(j=0; j<7; j++){cal->pileupk1[j] = puk1[j];} }
+         if( puk2[0] != -1 ){ for(j=0; j<7; j++){cal->pileupk2[j] = puk2[j];} }
+         if( puE1[0] != -1 ){ for(j=0; j<7; j++){cal->pileupE1[j] = puE1[j];} }
+         if( ct0[0] != -1 ){ for(j=0; j<16; j++){cal->crosstalk0[j] = ct0[j];} }
+         if( ct1[0] != -1 ){ for(j=0; j<16; j++){cal->crosstalk1[j] = ct1[j];} }
+         if( ct2[0] != -1 ){ for(j=0; j<16; j++){cal->crosstalk2[j] = ct2[j];} }
       }
       if( address != -1 ){
          cal->address = address;  cal->datatype = type;
@@ -887,6 +820,24 @@ int edit_calibration(Config *cfg, char *name, float offset, float gain, float qu
         for(j=0; j<7; j++){cal->pileupE1[j] = puE1[j]; }
       }else{
         cal->pileupE1[0]=0; cal->pileupE1[1]=0; cal->pileupE1[2]=0; cal->pileupE1[3]=0; cal->pileupE1[4]=0; cal->pileupE1[5]=0; cal->pileupE1[6]=0;
+      }
+      if( ct0[0] != -1 ){
+        for(j=0; j<16; j++){ cal->crosstalk0[j] = ct0[j]; }
+      }else{
+        cal->crosstalk0[0]=0; cal->crosstalk0[1]=0; cal->crosstalk0[2]=0; cal->crosstalk0[3]=0; cal->crosstalk0[4]=0; cal->crosstalk0[5]=0; cal->crosstalk0[6]=0; cal->crosstalk0[7]=0;
+        cal->crosstalk0[8]=0; cal->crosstalk0[9]=0; cal->crosstalk0[10]=0; cal->crosstalk0[11]=0; cal->crosstalk0[12]=0; cal->crosstalk0[13]=0; cal->crosstalk0[14]=0; cal->crosstalk0[15]=0;
+      }
+      if( ct1[0] != -1 ){
+        for(j=0; j<16; j++){ cal->crosstalk1[j] = ct1[j]; }
+      }else{
+        cal->crosstalk1[0]=0; cal->crosstalk1[1]=0; cal->crosstalk1[2]=0; cal->crosstalk1[3]=0; cal->crosstalk1[4]=0; cal->crosstalk1[5]=0; cal->crosstalk1[6]=0; cal->crosstalk1[7]=0;
+        cal->crosstalk1[8]=0; cal->crosstalk1[9]=0; cal->crosstalk1[10]=0; cal->crosstalk1[11]=0; cal->crosstalk1[12]=0; cal->crosstalk1[13]=0; cal->crosstalk1[14]=0; cal->crosstalk1[15]=0;
+      }
+      if( ct2[0] != -1 ){
+        for(j=0; j<16; j++){ cal->crosstalk2[j] = ct2[j]; }
+      }else{
+        cal->crosstalk2[0]=0; cal->crosstalk2[1]=0; cal->crosstalk2[2]=0; cal->crosstalk2[3]=0; cal->crosstalk2[4]=0; cal->crosstalk2[5]=0; cal->crosstalk2[6]=0; cal->crosstalk2[7]=0;
+        cal->crosstalk2[8]=0; cal->crosstalk2[9]=0; cal->crosstalk2[10]=0; cal->crosstalk2[11]=0; cal->crosstalk2[12]=0; cal->crosstalk2[13]=0; cal->crosstalk2[14]=0; cal->crosstalk2[15]=0;
       }
       cal->address = address;  cal->datatype = type;
     }

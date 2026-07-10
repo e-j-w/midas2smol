@@ -24,6 +24,7 @@ static float  quad_table[MAX_DAQSIZE]; float   *quads = quad_table;
 float  pileupk1[MAX_DAQSIZE][7];
 float  pileupk2[MAX_DAQSIZE][7];
 float  pileupE1[MAX_DAQSIZE][7];
+float  crosstalk[MAX_DAQSIZE][3][16];
 static short *chan_address = addr_table;
 static int subsys_initialized[MAX_SUBSYS];
 extern Grif_event grif_event[PTR_BUFSIZE];
@@ -71,12 +72,15 @@ int init_default_sort(Config *cfg, Sort_status *arg)
     for(j=0; j<7; j++){
       pileupk1[i][j] = pileupk2[i][j] = pileupE1[i][j] = -1;
     }
+    for(j=0; j<16; j++){
+      crosstalk[i][0][j] = crosstalk[i][1][j] = crosstalk[i][2][j] = -1;
+    }
   }
 
   cfg->odb_daqsize = odb_daqsize;
   for(i=0; i<odb_daqsize; i++){ // update config with odb info
     edit_calibration(cfg, chan_name[i], offsets[i], gains[i], quads[i], pileupk1[i], pileupk2[i], pileupE1[i],
-      chan_address[i],  dtype_table[i], arg->cal_overwrite );
+      crosstalk[i][0], crosstalk[i][1], crosstalk[i][2], chan_address[i],  dtype_table[i], arg->cal_overwrite );
   }
   // ALSO need to transfer config info to the arrays that are used in sort
   for(i=0; i<odb_daqsize; i++){
@@ -99,6 +103,11 @@ int init_default_sort(Config *cfg, Sort_status *arg)
       pileupk1[i][j] = (isnan(cal->pileupk1[j])) ? 0.0 : cal->pileupk1[j];
       pileupk2[i][j] = (isnan(cal->pileupk2[j])) ? 0.0 : cal->pileupk2[j];
       pileupE1[i][j] = (isnan(cal->pileupE1[j])) ? 0.0 : cal->pileupE1[j];
+    }
+    for(j=0; j<16; j++){
+      crosstalk[i][0][j] = (isnan(cal->crosstalk0[j])) ? 0.0 : cal->crosstalk0[j];
+      crosstalk[i][1][j] = (isnan(cal->crosstalk1[j])) ? 0.0 : cal->crosstalk1[j];
+      crosstalk[i][2][j] = (isnan(cal->crosstalk2[j])) ? 0.0 : cal->crosstalk2[j];
     }
   }
 
@@ -129,9 +138,11 @@ int GetIDfromAddress(unsigned short addr){ // address must be an unsigned short
 //      => all other window events are BEFORE the current event
 int pre_sort_enter(int start_idx, int frag_idx)
 {
-  Grif_event *ptr = &grif_event[frag_idx];
-  float energy;
-  int chan = ptr->chan;
+  Grif_event *alt, *ptr = &grif_event[frag_idx];
+  float energy, correction;
+  int dt, bin, chan2, chan = ptr->chan;
+  int clover, ge1, c1,c2, add;
+  int ct_index[4][4] = {{-1,0,1,2},{0,-1,1,2},{0,1,-1,2},{0,1,2,-1}};
 
   // Protect against invalid channel numbers
   if( chan < 0 || chan >= odb_daqsize ){
@@ -170,6 +181,37 @@ int pre_sort_enter(int start_idx, int frag_idx)
       if(ptr->pileup==1 && ptr->nhit ==1){
         ptr->pu_class = PU_SINGLE_HIT; // Single hit events, no pileup, this is the most common type of HPGe event
       }
+
+      // HPGe Clover time-dependant crosstalk corrections within same clover
+      int i = start_idx;
+      while( i != frag_idx ){ // need at least two events in window
+        if( ++i >=  PTR_BUFSIZE ){ i=0; } alt = &grif_event[i]; // WRAP
+        if( (chan2 = alt->chan)<0 || alt->chan >= odb_daqsize ){
+          fprintf(stderr,"presort error: ignored event in chan:%d\n",alt->chan );
+          continue;
+        }
+        if((dt=ptr->ts - alt->ts)>479 || alt->subsys != SUBSYS_HPGE_A){ continue; }
+
+        if(chan2 != chan ){
+          if((clover=(int)(crystal_table[chan2]/4)) == (int)(crystal_table[chan]/4)){
+            // HPGe Clover time-dependant crosstalk corrections within same clover
+            // dt is always positive here
+            // The original hit (ptr) came after the crosstalk-inducing hit (alt)
+            // Make correction to ptr hit based on energy of alt.
+            bin = (int)((1940+dt)/160);
+            if(bin<0 || bin>15){ fprintf(stderr,"pre_sort_enter bin [%d] out of bounds for dt %d\n",bin,dt); continue; }
+            ge1 = crystal_table[chan];
+            c1 = ge1%4;
+            c2 = ct_index[c1][(int)(crystal_table[chan2]%4)];
+            if(crosstalk[ge1][c2][bin] != -1 ){
+              //  correction = crosstalk[ge1][c2][bin] + ((crosstalk[ge1][c2][bin+1] - crosstalk[ge1][c2][bin]) * (float)(((1940+dt)%160)/160));
+              correction = crosstalk[ge1][c2][bin];
+              //  fprintf(stdout,"CT enter, %d %d: %d %f %f %f %f: %f + %f = %f\n",chan,chan2,bin,crosstalk[ge1][c2][bin+1],crosstalk[ge1][c2][bin],(float)(((1940+dt)%160)/160),alt->ecal,ptr->ecal,(alt->ecal * correction),(ptr->ecal+(alt->ecal * correction)));
+              ptr->ecal += alt->ecal * correction;
+            }
+          }
+        }
+      } // end of while
 
     } // end of if( ptr->subsys == SUBSYS_HPGE_A){
     return(0);

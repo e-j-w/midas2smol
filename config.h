@@ -31,6 +31,7 @@ typedef struct global_struct {
 typedef struct cal_coeff_struct {
    char name[CHAN_NAMELEN]; float offset; float gain; float quad;
    float pileupk1[7], pileupk2[7], pileupE1[7];
+   float crosstalk0[16], crosstalk1[16], crosstalk2[16];
    short address; short datatype;
 } Cal_coeff;
 
@@ -98,7 +99,7 @@ extern int set_pileup_correction(Config *cfg, int num, char url_args[][STRING_LE
 /////////////////////////////////////////////////////////////////////////
 /////////////////////          Gains         ////////////////////////////
 /////////////////////////////////////////////////////////////////////////
-extern int edit_calibration(Config *cfg, char *name, float offset, float gain, float quad, float pileupk1[7], float pileupk2[7], float pileupE1[7], int address, int type, int overwrite);
+extern int edit_calibration(Config *cfg, char *name, float offset, float gain, float quad, float pileupk1[7], float pileupk2[7], float pileupE1[7], float ct0[16], float ct1[16], float ct2[16], int address, int type, int overwrite);
 
 /////////////////////////////////////////////////////////////////////////
 /////////////////////       Variables        ////////////////////////////

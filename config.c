@@ -14,84 +14,6 @@
 ///////////////////////////////////////////////////////////////////////////
 Config *configs[MAX_CONFIGS];
 
-int write_config(Config *cfg, FILE *fp)
-{
-
-   Cal_coeff *calib;  Global *global;
-   Sortvar *var;
-   int i;
-   char tmp[64];
-
-   fprintf(fp,"{\n   \"Analyzer\" : [\n");
-   fprintf(fp,"      {\"Variables\" : [\n");
-   for(i=0; i<cfg->nsortvar; i++){ var = &cfg->varlist[i];
-      sprintf(tmp, "\"%s\"", var->name );
-      fprintf(fp,"%9s{ \"name\" : %-16s,", "", tmp );
-      fprintf(fp,"   \"title\" : \"%s\"}", var->title  );
-      fprintf(fp,"%s", ( i<cfg->nsortvar-1 ) ? ",\n" : "\n" );
-   }
-   fprintf(fp,"      ]},\n");
-   fprintf(fp,"      {\"Gates\" : [\n");
-   fprintf(fp,"      ]},\n");
-   fprintf(fp,"      {\"Histograms\" : [\n");
-   fprintf(fp,"\n      ]},\n");
-   fprintf(fp,"      {\"Globals\" : [\n");
-   for(i=0; i<cfg->nglobal; i++){ global = cfg->globals[i];
-      fprintf(fp,"%9s{\"name\" : \"%s\" , \"min\" : %d , \"max\" : %d ",
-              "", global->name, global->min, global->max );
-      fprintf(fp, "%s", ( i<cfg->nglobal-1 ) ? "},\n" : "}\n" );
-   }
-   fprintf(fp,"      ]},\n");
-   fprintf(fp,"      {\"Calibrations\" : [\n");
-   for(i=0; i<cfg->ncal; i++){ calib = cfg->calib[i];
-     fprintf(fp,"%9s{\"name\" : \"%s\" , \"address\" : %d , \"datatype\" : %d , \"offset\" : %f , \"gain\" : %f , \"quad\" : %e ", "", calib->name, calib->address, calib->datatype, calib->offset, calib->gain, calib->quad );
-     if(strncmp(calib->name,"GRG",3)==0){
-         if(calib->pileupk1[0] != -1){
-            fprintf(fp,", \"pileupk1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk1[0],calib->pileupk1[1],calib->pileupk1[2],calib->pileupk1[3],calib->pileupk1[4],calib->pileupk1[5],calib->pileupk1[6]);
-            fprintf(fp,", \"pileupk2\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupk2[0],calib->pileupk2[1],calib->pileupk2[2],calib->pileupk2[3],calib->pileupk2[4],calib->pileupk2[5],calib->pileupk2[6]);
-            fprintf(fp,", \"pileupE1\" : [ %f , %f , %e , %e , %e , %e , %e ]",calib->pileupE1[0],calib->pileupE1[1],calib->pileupE1[2],calib->pileupE1[3],calib->pileupE1[4],calib->pileupE1[5],calib->pileupE1[6]);
-         }else{
-            fprintf(fp,", \"pileupk1\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
-            fprintf(fp,", \"pileupk2\" : [ %d , %d , %d , %d , %d , %d , %d ]",1,0,0,0,0,0,0);
-            fprintf(fp,", \"pileupE1\" : [ %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0);
-         }
-         if(calib->crosstalk0[0] != -1){
-            fprintf(fp,", \"crosstalk0\" : [ %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ]",calib->crosstalk0[0],calib->crosstalk0[1],calib->crosstalk0[2],calib->crosstalk0[3],calib->crosstalk0[4],calib->crosstalk0[5],calib->crosstalk0[6],calib->crosstalk0[7],calib->crosstalk0[8],calib->crosstalk0[9],calib->crosstalk0[10],calib->crosstalk0[11],calib->crosstalk0[12],calib->crosstalk0[13],calib->crosstalk0[14],calib->crosstalk0[15]);
-            fprintf(fp,", \"crosstalk1\" : [ %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ]",calib->crosstalk1[0],calib->crosstalk1[1],calib->crosstalk1[2],calib->crosstalk1[3],calib->crosstalk1[4],calib->crosstalk1[5],calib->crosstalk1[6],calib->crosstalk1[7],calib->crosstalk1[8],calib->crosstalk1[9],calib->crosstalk1[10],calib->crosstalk1[11],calib->crosstalk1[12],calib->crosstalk1[13],calib->crosstalk1[14],calib->crosstalk1[15]);
-            fprintf(fp,", \"crosstalk2\" : [ %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ]",calib->crosstalk2[0],calib->crosstalk2[1],calib->crosstalk2[2],calib->crosstalk2[3],calib->crosstalk2[4],calib->crosstalk2[5],calib->crosstalk2[6],calib->crosstalk2[7],calib->crosstalk2[8],calib->crosstalk2[9],calib->crosstalk2[10],calib->crosstalk2[11],calib->crosstalk2[12],calib->crosstalk2[13],calib->crosstalk2[14],calib->crosstalk2[15]);
-         }else{
-            fprintf(fp,", \"crosstalk0\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-            fprintf(fp,", \"crosstalk1\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-            fprintf(fp,", \"crosstalk2\" : [ %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ]",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-         }
-     }
-      fprintf(fp, "%s", ( i<cfg->ncal-1 ) ? "},\n" : "}\n" );
-   }
-   fprintf(fp,"      ]},\n");
-   fprintf(fp,"      {\"Directories\" : [\n");
-   {
-      fprintf(fp,"%9s{\"name\" : \"Data\", ", "");
-      fprintf(fp,"\"Path\" : \"%s\"},\n", cfg->data_dir);
-      fprintf(fp,"%9s{\"name\" : \"Histo\", ", "");
-      fprintf(fp,"\"Path\" : \"%s\"},\n", cfg->data_dir);
-      fprintf(fp,"%9s{\"name\" : \"Config\", ", "");
-      fprintf(fp,"\"Path\" : \"%s\"}\n", cfg->config_dir); // NO COMMA
-   }
-   fprintf(fp,"      ]},\n");
-   fprintf(fp,"      {\"Midas\" : [\n");
-   {
-      fprintf(fp,"%9s{\"name\" : \"Title\", ", "");
-      fprintf(fp,"\"Value\" : \"%s\"},\n", cfg->midas_title);
-      fprintf(fp,"%9s{\"name\" : \"StartTime\", ", "");
-      fprintf(fp,"\"Value\" : \"%d\"},\n", cfg->midas_start_time);
-      fprintf(fp,"%9s{\"name\" : \"Duration\", ", "");
-      fprintf(fp,"\"Value\" : \"%d\"}\n", cfg->midas_runtime);  // NO COMMA
-   }
-   fprintf(fp,"      ]}\n"); // NO COMMA AFTER FINAL TABLE
-   fprintf(fp,"   ]\n}\n"); // Analyser,File
-   return(0);
-}
-
 static char config_data[1024*1024];
 int load_config(Config *cfg, const char *filename, char *buffer)
 {
@@ -614,9 +536,6 @@ int copy_config(Config *src, Config *dst)
    dst->nconds=0;
    dst->ngates=0;
 
-   // apply_gates below takes care of var->histo_list_x
-   for(i=0; i<MAX_SORT_VARS; i++){dst->varlist[i].use_count_x = 0; }
-   dst->nusedvar = dst->nuser = 0; // add_histos takes care of these
    // copy config histograms  ODB histos will follow later
    /*for(i=0; i<src->nhistos; i++){
       histo = src->histo_list[i];
@@ -713,59 +632,6 @@ int remove_config(Config *cfg)
    configs[i] = NULL;
    return(0);
 }
-
-int save_config(Config *cfg, const char *filename, int overwrite)
-{
-   FILE *fp;
-   if( cfg->lock ){ return(-1); } // config file currently being read
-   if( !overwrite ){
-      if( (fp=fopen(filename,"r")) != NULL ){
-         fprintf(stderr,"save_config: file %s already exists\n", filename);
-         fclose(fp); return(-1);
-      }
-   }
-   if( (fp=fopen(filename,"w")) == NULL ){
-      fprintf(stderr,"save_config: cant open %s to write\n", filename);
-      return(-1);
-   }
-   fprintf(stdout,"Writing configuration to file: %s\n",filename);
-   write_config(cfg, fp);
-   fclose(fp);
-   return(0);
-}
-
-/////////////////////////////   Variable   /////////////////////////////////
-
-// THERE IS CURRENTLY NO WAY TO CALCULATE THE VALUE OF A VARIABLE
-//   GIVEN ONLY ITS TEXT DESCRIPTION
-//      SO THIS FUNCTION WOULD BE POINTLESS AT THE MOMENT
-
-//int add_variable(Config *cfg, char *name, char *title)
-//{
-//   time_t current_time = time(NULL);
-//   int i = cfg->nsortvar;
-//   if( i == MAX_SORT_VARS ){
-//      fprintf(stderr,"too many variables when adding %s\n", name); return(-1);
-//   }
-//   memcpy(cfg->varlist[i].name, name, strlen(name)+1);
-//   memcpy(cfg->varlist[i].title, title, strlen(title)+1);
-//   ++cfg->nsortvar;
-//   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
-//  return(0);
-//}
-
-Sortvar *find_sortvar(Config *cfg, char *name)
-{
-   int i;
-   for(i=0; i<cfg->nsortvar; i++){
-      if( strcmp(cfg->varlist[i].name, name) == 0 &&
-          strlen(cfg->varlist[i].name) == strlen(name) ){
-         return( &cfg->varlist[i] );
-      }
-   }
-   return(NULL);
-}
-
 /////////////////////////////   CALIBRATION   /////////////////////////////
 
 int edit_calibration(Config *cfg, char *name, float offset, float gain, float quad, float puk1[7], float puk2[7], float puE1[7], float ct0[16], float ct1[16], float ct2[16], int address, int type, int overwrite)
@@ -842,7 +708,7 @@ int edit_calibration(Config *cfg, char *name, float offset, float gain, float qu
       cal->address = address;  cal->datatype = type;
     }
     //printf("saving config edit_calibration\n");
-   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
+   cfg->mtime = current_time;
    return(0);
 }
 
@@ -865,7 +731,7 @@ int set_directory(Config *cfg, char *name, char *path)
       return(-1);
    }
    //printf("saving config set_directory\n");
-   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
+   cfg->mtime = current_time;
    return(0);
 }
 
@@ -902,7 +768,7 @@ int set_midas_param(Config *cfg, char *name, char *value)
       return(-1);
    }
    //printf("saving config set_midas_param\n");
-   cfg->mtime = current_time;  save_config(cfg, cfg->configName, 1);
+   cfg->mtime = current_time;
    return(0);
 }
 

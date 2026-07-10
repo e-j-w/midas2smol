@@ -35,14 +35,8 @@ typedef struct cal_coeff_struct {
    short address; short datatype;
 } Cal_coeff;
 
-typedef struct sortvar_struct {     // sortvars used by histos AND conditions
-   int value;      int offset;    int dtype;     //  but "use_count" only used
-   int use_count_x;  int valid;   int local;     //  to refer to histo_use
-   char name[STRING_LEN]; char title[STRING_LEN];
-} Sortvar;
-
 typedef struct cond_struct {      // use count inc/dec when un/applying gates
-   char name[STRING_LEN]; Sortvar *var; int op; int value;      // (to histos)
+   char name[STRING_LEN]; int op; int value;      // (to histos)
    int use_count;  int veto;
    int passed; int pass_count;  // passed only used during sort
 } Cond;
@@ -78,9 +72,6 @@ typedef struct config_set_struct { int  type; // memory(live,sort) or disk
    int nglobal;          Global *globals[MAX_GLOBALS];
    int nconds;           Cond  *condlist[MAX_CONDS];       //   sorted list
    int ngates;           Gate  *gatelist[MAX_GATES];//(inactive at end)           47384
-   int nusedvar;         Sortvar *usedvars[MAX_SORT_VARS];
-   int nuser;            
-   int nsortvar;         Sortvar varlist[MAX_SORT_VARS];                     // 33921336
    Cond cond_array[MAX_GATES];  Gate gate_array[MAX_GATES]; // unsorted
    Global global_array[MAX_GLOBALS];                                         // 34115896
    Cal_coeff calib_array[MAX_CALIB];  int odb_daqsize;
@@ -100,19 +91,6 @@ extern int set_pileup_correction(Config *cfg, int num, char url_args[][STRING_LE
 /////////////////////          Gains         ////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 extern int edit_calibration(Config *cfg, char *name, float offset, float gain, float quad, float pileupk1[7], float pileupk2[7], float pileupE1[7], float ct0[16], float ct1[16], float ct2[16], int address, int type, int overwrite);
-
-/////////////////////////////////////////////////////////////////////////
-/////////////////////       Variables        ////////////////////////////
-/////////////////////////////////////////////////////////////////////////
-
-/////// sort variables are currently predefined and fixed at compilation time
-/////// maybe later will add ability to add/remove them during runtime
-//extern int add_variable(char *name);
-//extern int remove_variable(char *name);
-extern Sortvar *find_sortvar(Config *cfg, char *name);
-
-extern int add_global(Config *cfg, char *name, int value, int val2);
-extern int remove_global(Config *cfg, char *name);
 
 /////////////////////////////////////////////////////////////////////////
 /////////////////          Config Files         /////////////////////////
